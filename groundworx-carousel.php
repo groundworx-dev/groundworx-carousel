@@ -1,0 +1,64 @@
+<?php
+/**
+ * Plugin Name: Groundworx Carousel Block
+ * Description: A powerful and responsive carousel block built with Splide and Gutenberg.
+ * Version: 1.0.0
+ * Author: Johanne Courtright
+ * Plugin URI: https://groundworx.dev  
+ * Author URI: https://groundworx.dev 
+ * Requires at least: 6.5
+ * Tested up to: 6.8.1
+ * Requires PHP: 8.2
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+define( 'GROUNDWORX_CAROUSEL_VERSION', '1.0.0' );
+define( 'GROUNDWORX_CAROUSEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'GROUNDWORX_CAROUSEL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+class Groundworx_Carousel_Loader {
+
+	/**
+	 * Initialize the loader
+	 */
+	public static function init() {
+		add_action( 'init', [ __CLASS__, 'register_blocks' ], 5 );
+	}
+
+	/**
+	 * Register all block.php files under build/blocks/*
+	 */
+	public static function register_blocks() {
+		$plugin_dir = plugin_dir_path( __FILE__ );
+		$block_paths = glob( $plugin_dir . 'build/blocks/**/block.php' );
+
+		if ( $block_paths ) {
+			foreach ( $block_paths as $block ) {
+				if ( is_file( $block ) ) {
+					require_once $block;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Return array of all block paths by handle
+	 */
+	public static function get_blocks() {
+		$blocks = [];
+		$plugin_dir = plugin_dir_path( __FILE__ );
+		$paths = glob( $plugin_dir . 'build/blocks/*' );
+
+		foreach ( $paths as $block ) {
+			$handle = basename( $block );
+			$blocks[ $handle ] = $block;
+		}
+
+		return $blocks;
+	}
+}
+
+Groundworx_Carousel_Loader::init();

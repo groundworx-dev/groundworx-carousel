@@ -1,0 +1,191 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "groundworx/carousel",
+  "version": "0.1.0",
+  "title": "Carousel",
+  "category": "design",
+  "description": "Display content in a carousel, with blocks added to each slide.",
+  "allowedBlocks": [
+    "groundworx/slide"
+  ],
+  "keywords": [
+    "slides",
+    "carousel"
+  ],
+  "supports": {
+    "__experimentalOnEnter": true,
+    "__experimentalOnMerge": true,
+    "__experimentalSettings": true,
+    "align": true,
+    "html": false,
+    "interactivity": {
+      "clientNavigation": true
+    },
+    "inserter": true,
+    "className": true,
+    "groundworx": {
+      "breakpoints": [
+        "tablet",
+        "laptop",
+        "desktop"
+      ],
+      "carousel": {
+        "arrowStyle": "M14.74,36l-3.48-3.48L23.79,20L11.26,7.48L14.74,4l16,16L14.74,36z",
+        "paginationStyle": "circle"
+      }
+    },
+    "color": {
+      "gradients": true,
+      "__experimentalDefaultControls": {
+        "background": true,
+        "text": true
+      }
+    },
+    "spacing": {
+      "margin": [
+        "top",
+        "bottom"
+      ],
+      "padding": true,
+      "blockGap": true,
+      "selector": ".splide__list",
+      "__experimentalSkipSerialization": [
+        "blockGap"
+      ],
+      "__experimentalDefaultControls": {
+        "padding": true,
+        "blockGap": true
+      }
+    },
+    "shadow": true,
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true,
+      "__experimentalDefaultControls": {
+        "color": true,
+        "radius": true,
+        "style": true,
+        "width": true
+      }
+    },
+    "layout": {
+      "default": {
+        "type": "constrained"
+      },
+      "allowJustification": true,
+      "allowOrientation": true,
+      "allowSwitching": false,
+      "allowEditing": true,
+      "allowSizingOnChildren": false,
+      "allowVerticalAlignment": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalFontStyle": true,
+      "__experimentalTextTransform": true,
+      "__experimentalTextDecoration": true,
+      "__experimentalLetterSpacing": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true
+      }
+    }
+  },
+  "attributes": {
+    "isPreview": {
+      "type": "boolean",
+      "default": false
+    },
+    "template": {
+      "type": "string",
+      "default": "default"
+    },
+    "progressColor": {
+      "type": "string"
+    },
+    "customProgressColor": {
+      "type": "string"
+    },
+    "paginationColor": {
+      "type": "string"
+    },
+    "customPaginationColor": {
+      "type": "string"
+    },
+    "arrowsColor": {
+      "type": "string"
+    },
+    "customArrowsColor": {
+      "type": "string"
+    },
+    "arrowsBackgroundColor": {
+      "type": "string"
+    },
+    "customArrowsBackgroundColor": {
+      "type": "string"
+    },
+    "counterColor": {
+      "type": "string"
+    },
+    "customCounterColor": {
+      "type": "string"
+    },
+    "breakpoints": {
+      "type": "object",
+      "default": {
+        "tablet": {
+          "layout": {
+            "type": "grid",
+            "minimumColumnWidth": null,
+            "columnCount": 3
+          }
+        },
+        "laptop": {
+          "layout": {
+            "type": "grid",
+            "minimumColumnWidth": "300px"
+          }
+        },
+        "desktop": {
+          "layout": {
+            "type": "grid",
+            "minimumColumnWidth": "300px"
+          }
+        }
+      }
+    },
+    "splideOptions": {
+      "type": "object",
+      "default": {
+        "type": "slide",
+        "focus": 0,
+        "perPage": 1,
+        "rewind": false,
+        "autoplay": false,
+        "pagination": false,
+        "arrows": false,
+        "progressBar": false,
+        "counter": false,
+        "autoHeight": false
+      }
+    }
+  },
+  "selectors": {
+    "root": ".wp-block-groundworx-carousel"
+  },
+  "render": "file:./render.php",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": [
+    "file:./script.css",
+    "file:./style-index.css"
+  ],
+  "script": [
+    "file:./script.js"
+  ]
+}

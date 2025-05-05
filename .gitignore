@@ -1,0 +1,47 @@
+# Ignore everything
+/*
+
+# Allow specific files and directories
+!.gitignore
+!readme.txt
+!README.md
+!LICENSE
+!groundworx-carousel.php
+!build/
+!build/blocks/
+
+# Ignore build artifacts
+build/**/*.map
+build/**/*.zip
+build/**/*.tar.gz
+
+# Ignore node modules and other development dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+.DS_Store
+Thumbs.db
+
+# Ignore OS-specific files
+*.swp
+*.swo
+
+# Ignore log files
+*.log
+
+# Ignore compiled files
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Ignore packaged files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
