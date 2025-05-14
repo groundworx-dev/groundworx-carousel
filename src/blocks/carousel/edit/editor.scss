@@ -1,0 +1,26 @@
+.wp-block-groundworx-carousel {
+    position: relative;
+    > .splide {
+        margin-block-start: 0;
+       
+        .splide__pagination, .splide__arrows, .splide__arrow, .splide__counter, .splide__progress {
+            pointer-events: none !important;
+        }
+       
+    }
+    .add-slide-button {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+}
+
+.is-inherited .components-form-toggle .components-form-toggle__thumb {
+    transform: translateX(8px);
+}
+
+@import './../variations/default/editor';
+@import './../variations/compact/editor';
+@import './../variations/mobile-only/editor';
+@import './../variations/overlay/editor';
+@import './../variations/overlay-alt/editor';

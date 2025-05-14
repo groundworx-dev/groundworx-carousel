@@ -1,14 +1,14 @@
-=== Groundworx Carousel Block ===
-Contributors: johannecourtright  
-Tags: block, carousel, slider, gutenberg, responsive, splide  
-Plugin URI: https://groundworx.dev  
-Author URI: https://groundworx.dev 
-Requires at least: 6.5  
-Tested up to: 6.5.2  
-Requires PHP: 8.2  
-Stable tag: 1.0.0  
-License: GPLv2 or later  
-License URI: https://www.gnu.org/licenses/gpl-2.0.html  
+=== Groundworx Carousel ===
+Contributors: alexandrie
+Tags: block, carousel, slider, gutenberg, responsive
+Plugin URI: https://github.com/groundworx-dev/groundworx-carousel
+Author URI: https://groundworx.dev
+Requires at least: 6.5
+Tested up to: 6.8
+Requires PHP: 8.2
+Stable tag: 1.0.1
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 A powerful and responsive carousel block built with Splide.js and fully integrated into the WordPress block editor.
 
@@ -43,6 +43,10 @@ Perfect for building galleries, content sliders, testimonials, product showcases
 3. Responsive layout and per-slide content
 
 == Changelog ==
+
+= 1.0.1 =
+* Fixed file exclusions for packaging.
+* Updated metadata for WordPress.org compliance.
 
 = 1.0.0 =
 * Initial release.
@@ -88,6 +92,11 @@ wp.blocks.registerBlockVariation('groundworx/carousel', {
 });
 
 ```
+
+== Source Code ==
+The unminified source code is publicly available at:
+https://github.com/groundworx-dev/groundworx-carousel
+
 
 == About ==
 

@@ -1,0 +1,71 @@
+
+.wp-block-groundworx-carousel.template-overlay {
+
+    > .splide.is-active {
+        .splide__wrapper {
+            display: grid;
+            grid-template-columns: [track-start progress-start pagination-start arrows-start] auto [pagination-end arrows-end progress-end track-end];
+            grid-template-rows: 
+            [track-start arrows-start] 1fr
+            [arrows-end track-end progress-start] auto
+            [progress-end pagination-start pagination-end];
+        }
+
+        .splide__arrows {
+            z-index: 1;
+            position: relative;
+            display: inline-grid;
+            justify-self: stretch;
+            justify-content: space-between;
+            align-items: center;
+            gap: 5px;
+            grid-template-columns: [counter-start arrow-prev-start] auto [arrow-prev-end arrow-next-start] auto [counter-end arrow-next-end];
+            grid-template-rows: [arrow-prev-start counter-start arrow-next-start] auto [arrow-prev-end counter-end arrow-next-end];
+        }
+
+        .splide__pagination {
+            align-self: flex-end;
+            justify-self: center;
+            z-index: 1;
+            position: relative;
+            display: flex;
+            margin: 0;
+            padding: .5rem;
+            justify-content: center;
+        }
+
+        .splide__counter {
+            align-self: flex-end;
+            justify-self: flex-end;
+            justify-content: flex-end;
+            z-index: 1;
+            padding: .5rem;
+            position: absolute;
+        }
+
+        .splide__progress {
+            z-index: 1;
+            position: relative;
+        }
+        
+        .splide__track {
+            z-index: 0;
+        }
+    }
+        
+}
+
+
+@container (min-width: 520px) {
+    .wp-block-groundworx-carousel.template-overlay {
+        > .splide.is-active {    
+            .splide__wrapper {
+                grid-template-columns: [track-start progress-start pagination-start arrows-start] auto [pagination-end arrows-end progress-end track-end];
+                grid-template-rows: 
+                [track-start pagination-start arrows-start] 1fr
+                [arrows-end pagination-end track-end progress-start] auto
+                [progress-end];
+            }
+        }
+    }
+}

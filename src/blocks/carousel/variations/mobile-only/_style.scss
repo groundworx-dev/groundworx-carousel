@@ -1,0 +1,55 @@
+
+.wp-block-groundworx-carousel.template-mobile-only {
+
+    > .splide.is-active {
+        .splide__wrapper {
+            display: grid;
+            grid-template-columns: [track-start progress-start pagination-start arrows-start] auto [arrows-end pagination-end progress-end track-end];
+            grid-template-rows: 
+            [track-start pagination-start] auto
+            [pagination-end track-end progress-start] auto
+            [progress-end] .5rem
+            [arrows-start] auto [arrows-end];
+        }
+
+        .splide__arrows {
+            z-index: 1;
+            position: relative;
+            display: grid;
+            justify-self: center;
+            align-items: center;
+            gap: .25rem;
+            grid-template-columns: [arrow-prev-start] auto [arrow-prev-end counter-start] auto [counter-end arrow-next-start] auto [arrow-next-end];
+            grid-template-rows: [counter-start arrow-prev-start arrow-next-start] auto [arrow-prev-end arrow-next-end counter-end];
+        }
+
+        .splide__pagination {
+            align-self: flex-end;
+            justify-content: center;
+            z-index: 1;
+            position: relative;
+            display: flex;
+            margin: 0;
+            padding: .5rem 0;
+        }
+
+        .splide__counter {
+            align-self: center;
+            justify-self: center;
+            padding-left: .25rem;
+            padding-right: .25rem;
+            z-index: 1;
+        }
+
+        .splide__progress {
+            z-index: 1;
+            position: relative;
+        }
+        
+        .splide__track {
+            z-index: 0;
+        }
+
+    }
+        
+}

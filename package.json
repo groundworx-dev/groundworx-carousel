@@ -1,0 +1,33 @@
+{
+  "name": "groundworx-carousel",
+  "version": "1.0.1",
+  "main": "index.js",
+  "scripts": {
+    "start": "wp-scripts start --experimental-modules --webpack-copy-php --progress",
+    "build": "wp-scripts build --experimental-modules --webpack-copy-php --progress",
+    "zip": "zip -r groundworx-carousel.zip . -x \"node_modules/*\" -x \"src/*\" -x \"webpack.config.js\" -x \".babelrc\" -x \"package.json\" -x \"package-lock.json\" -x \".vscode/*\" -x \"README.md\" -x \".gitignore\" -x \".distignore\" -x \".git/*\""
+  },
+  "browserslist": [
+    "defaults"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/groundworx-dev/groundworx-carousel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/groundworx-dev/groundworx-carousel/issues"
+  },
+  "homepage": "https://github.com/groundworx-dev/groundworx-carousel#readme",
+  "devDependencies": {
+    "@wordpress/icons": "^10.21.0",
+    "@wordpress/scripts": "^30.14.1",
+    "sass": "^1.86.3"
+  },
+  "dependencies": {
+    "@groundworx/components": "^1.0.0",
+    "@groundworx/foundation": "^1.0.0",
+    "@groundworx/icons": "^1.0.0",
+    "@groundworx/utils": "^1.0.0",
+    "@splidejs/splide": "^4.1.4"
+  }
+}
