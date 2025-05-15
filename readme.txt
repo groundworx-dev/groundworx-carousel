@@ -1,10 +1,12 @@
 === Groundworx Carousel ===
 Contributors: alexandrie
 Tags: block, carousel, slider, gutenberg, responsive
-Plugin URI: https://github.com/groundworx-dev/groundworx-carousel
+Plugin URI: https://wordpress.org/plugins/groundworx-carousel
 Author URI: https://groundworx.dev
+Donate link: https://ko-fi.com/groundworx
+GitHub URI: https://github.com/groundworx-dev/groundworx-carousel
 Requires at least: 6.5
-Tested up to: 6.8
+Tested up to: 6.8.1
 Requires PHP: 8.2
 Stable tag: 1.0.2
 License: GPLv2 or later
@@ -63,44 +65,39 @@ Yes, the Carousel block supports all inner blocks inside each `Slide` block.
 = Does it support touch and swipe? =  
 Yes. Splide.js provides full touch/swipe navigation on mobile and tablet.
 
-= Can I disable the carousel for a specific breakpoint? =  
-Absolutely. You can "destroy" the carousel at selected breakpoints and apply a grid layout instead.
-
 == Upgrade Notice ==
+
+= 1.0.2 =
+Fixes a bug with breakpoint configuration. Recommended for all users.
 
 = 1.0.0 =  
 First stable release of the Groundworx Carousel block.
 
 == Developer Notes ==
 
-= Can I add my own block variations? =  
-Yes. The Carousel block is built with extensibility in mind. You can register your own block variations using `wp.blocks.registerBlockVariation()` in JavaScript. All Splide options are passed as-is through the `splideOptions` attribute.
+= Supported Breakpoints for Carousel Fallback =
 
-However, `supports` (such as `arrowStyle` or `paginationStyle`) cannot be set via variation definition. To customize those, you must use a filter like `blocks.registerBlockType`.
+Groundworx Carousel allows you to disable the carousel and fall back to a grid layout at a specific breakpoint by passing `destroy: true` inside `splideOptions.breakpoints`.
 
-Example (variation):
+The supported breakpoint keys are:
 
-```
-wp.blocks.registerBlockVariation('groundworx/carousel', {
-    name: 'minimal-style',
-    title: 'Minimal Style',
-    attributes: {
-        template: 'minimal',
-        splideOptions: {
-            type: 'fade',
-            arrows: true,
-            pagination: false
-        }
-    },
-    isDefault: false
-});
+- `tablet`
+- `laptop`
+- `desktop`
 
-```
+These follow a **mobile-first, breakpoint-and-up** model. For example, using `tablet` will apply the fallback from `tablet` size and up.
+
+You can also use these breakpoints to provide default values for `splideOptions` settings — such as `perPage`, `gap`, or `arrows` — at different screen sizes.  
+**Important:** Once the carousel is destroyed via `destroy: true`, it cannot be reactivated at larger breakpoints. All subsequent settings will be ignored.
+
+You can register custom variations using `wp.blocks.registerBlockVariation()` and define breakpoint-specific `splideOptions`.
+
+For full code examples, refer to the GitHub repository:  
+https://github.com/groundworx-dev/groundworx-carousel#example-variations
 
 == Source Code ==
 The unminified source code is publicly available at:
 https://github.com/groundworx-dev/groundworx-carousel
-
 
 == About ==
 

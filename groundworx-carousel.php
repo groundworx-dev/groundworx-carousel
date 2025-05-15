@@ -3,14 +3,16 @@
  * Plugin Name: Groundworx Carousel
  * Description: A powerful and responsive carousel block built with Splide and Gutenberg.
  * Version: 1.0.2
- * Author: Johanne Courtright
- * Plugin URI: https://github.com/groundworx-dev/groundworx-carousel
- * Author URI: https://groundworx.dev 
+ * Plugin URI: https://wordpress.org/plugins/groundworx-carousel
  * Requires at least: 6.5
- * Tested up to: 6.8
+ * Tested up to: 6.8.1
  * Requires PHP: 8.2
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Author: Johanne Courtright
+ * Author URI: https://groundworx.dev
+ * Donate link: https://ko-fi.com/groundworx
+ * GitHub URI: https://github.com/groundworx-dev/groundworx-carousel
  */
 
 defined( 'ABSPATH' ) || exit;
