@@ -1,6 +1,6 @@
 const path = require('path');
 const [scriptConfig, moduleConfig] = require('@wordpress/scripts/config/webpack.config.js');
-const breakpoints = require('@groundworx/foundation/breakpoints');
+const breakpoints = require('./breakpoints.json');
 
 // Generate SCSS $breakpoints map
 const scssVars = `$breakpoints: (${Object.entries(breakpoints)

@@ -6,7 +6,7 @@ Author URI: https://groundworx.dev
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,11 +38,15 @@ Perfect for building galleries, content sliders, testimonials, product showcases
 
 == Screenshots ==
 
-1. The Carousel block in the block editor
-2. Carousel options in Inspector Controls
-3. Responsive layout and per-slide content
+1. Sleek and responsive front-end carousel layout
+2. Responsive settings per breakpoint in block editor
+3. Customize design with native WordPress controls
+4. Grid layout with mobile-first carousel fallback
 
 == Changelog ==
+
+= 1.0.2 =
+* Fixed: Breakpoint configuration loading from plugin path.
 
 = 1.0.1 =
 * Fixed file exclusions for packaging.
@@ -76,7 +80,7 @@ However, `supports` (such as `arrowStyle` or `paginationStyle`) cannot be set vi
 
 Example (variation):
 
-```js
+```
 wp.blocks.registerBlockVariation('groundworx/carousel', {
     name: 'minimal-style',
     title: 'Minimal Style',

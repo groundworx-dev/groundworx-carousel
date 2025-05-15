@@ -11,8 +11,9 @@ if ( ! class_exists( 'Groundworx_Carousel_Breakpoints' ) ) {
 			if ( ! is_null( self::$breakpoints ) ) {
 				return;
 			}
-
-			$path = get_theme_file_path( 'breakpoints.json' );
+		
+			$path = GROUNDWORX_CAROUSEL_PLUGIN_DIR . 'breakpoints.json';
+		
 			if ( file_exists( $path ) ) {
 				$json = file_get_contents( $path );
 				$data = json_decode( $json, true );

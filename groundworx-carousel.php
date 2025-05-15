@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Groundworx Carousel
  * Description: A powerful and responsive carousel block built with Splide and Gutenberg.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Johanne Courtright
  * Plugin URI: https://github.com/groundworx-dev/groundworx-carousel
  * Author URI: https://groundworx.dev 
