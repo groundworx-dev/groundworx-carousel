@@ -2,10 +2,10 @@
 /**
  * Plugin Name: Groundworx Carousel
  * Description: A powerful and responsive carousel block built with Splide and Gutenberg.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Plugin URI: https://wordpress.org/plugins/groundworx-carousel
  * Requires at least: 6.5
- * Tested up to: 6.8.1
+ * Tested up to: 6.8.0
  * Requires PHP: 8.2
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

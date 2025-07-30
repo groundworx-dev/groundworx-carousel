@@ -6,9 +6,9 @@ Author URI: https://groundworx.dev
 Donate link: https://ko-fi.com/groundworx
 GitHub URI: https://github.com/groundworx-dev/groundworx-carousel
 Requires at least: 6.5
-Tested up to: 6.8.1
+Tested up to: 6.8.0
 Requires PHP: 8.2
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ Perfect for building galleries, content sliders, testimonials, product showcases
 
 == Changelog ==
 
+= 1.0.3 =
+* Fix: Adjusted editor canvas width detection for iframe-less block editor in WordPress 6.8+
+
 = 1.0.2 =
 * Fixed: Breakpoint configuration loading from plugin path.
 
@@ -66,6 +69,9 @@ Yes, the Carousel block supports all inner blocks inside each `Slide` block.
 Yes. Splide.js provides full touch/swipe navigation on mobile and tablet.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Fixes editor layout bug in WordPress 6.8 due to iframe removal.
 
 = 1.0.2 =
 Fixes a bug with breakpoint configuration. Recommended for all users.

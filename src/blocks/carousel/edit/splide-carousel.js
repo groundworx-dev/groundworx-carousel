@@ -14,8 +14,15 @@ import CarouselToolbar from './carousel-toolbar';
 
 // Helpers
 function getEditorCanvasWidth() {
+	const el = getEditorCanvasElement();
+	return el?.getBoundingClientRect?.().width || window.innerWidth;
+}
+
+function getEditorCanvasElement() {
 	const iframe = document.querySelector('iframe[name="editor-canvas"]');
-	return iframe?.contentDocument?.body?.getBoundingClientRect().width || window.innerWidth;
+	if (iframe?.contentDocument?.body) return iframe.contentDocument.body;
+
+	return document.querySelector('.editor-styles-wrapper');
 }
 
 function getEditorAdjustment() {
