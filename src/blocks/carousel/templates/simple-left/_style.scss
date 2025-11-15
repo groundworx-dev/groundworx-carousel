@@ -1,0 +1,100 @@
+.wp-block-groundworx-carousel.template-simple-left {
+    > .splide.is-active {
+        > .splide__wrapper {
+            display: grid;
+            grid-template-columns: [track-start progress-start pagination-start arrows-start] auto [arrows-end pagination-end] var(--wp--preset--spacing--gutter, 1rem) [progress-end track-end];
+            grid-template-rows: 
+            [track-start pagination-start] auto
+            [pagination-end track-end progress-start] auto
+            [progress-end];
+            
+            > .splide__track {
+                z-index: 0;
+            }
+
+            > .splide__arrows {
+                z-index: 1;
+                position: relative;
+                display: grid;
+                justify-self: center;
+                align-items: center;
+                gap: .25rem;
+                grid-template-columns: [arrow-prev-start] auto [arrow-prev-end counter-start] auto [counter-end arrow-next-start] auto [arrow-next-end];
+                grid-template-rows: [counter-start arrow-prev-start arrow-next-start] auto [arrow-prev-end arrow-next-end counter-end];
+                
+                .splide__counter {
+                    align-self: center;
+                    justify-self: center;
+                    z-index: 1;
+                    min-width: 5ch;
+                    text-align: center;
+                }
+            }
+
+            > .splide__pagination {
+                align-self: flex-end;
+                justify-content: center;
+                z-index: 1;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                margin: 0;
+                padding: 0;
+                justify-self: flex-end;
+                align-self: center;
+
+                flex-direction: column;
+                transform: rotate(-90deg) translateY(-100%) translateX(50%);
+                transform-origin: center right;
+                writing-mode: vertical-rl;
+            }
+
+            > .splide__progress {
+                z-index: 1;
+                position: relative;
+            }
+        }
+        &:where(.splide--has-arrows, .splide--has-counter) {
+            > .splide__wrapper {
+                grid-template-rows: 
+                [track-start pagination-start] auto
+                [pagination-end track-end progress-start] auto
+                [progress-end] var(--wp--preset--spacing--gutter, 1rem)
+                [arrows-start] auto [arrows-end];
+            
+                > .splide__arrows {
+                    z-index: 1;
+                    position: relative;
+                    display: grid;
+                    justify-self: flex-start;
+                    align-items: center;
+                    grid-template-rows: [counter-start arrow-prev-start arrow-next-start] auto [arrow-prev-end arrow-next-end counter-end];
+                }
+            }
+        }
+        &.splide--has-arrows:not(.splide--has-counter) {
+            > .splide__wrapper {
+                > .splide__arrows {
+                    grid-template-columns: [arrow-prev-start] auto [arrow-prev-end arrow-next-start] auto [arrow-next-end];
+                }
+            }
+        }
+
+        &.splide--has-counter:not(.splide--has-arrows) {
+            > .splide__wrapper {
+                > .splide__arrows {
+                    grid-template-columns: [counter-start] auto [counter-end];
+                }
+            }
+        }
+        &.splide--has-arrows.splide--has-counter {
+            > .splide__wrapper {
+                > .splide__arrows {
+                    grid-template-columns: [arrow-prev-start] auto [arrow-prev-end counter-start] auto [counter-end arrow-next-start] auto [arrow-next-end];
+                }
+            }
+        }
+
+    }
+        
+}

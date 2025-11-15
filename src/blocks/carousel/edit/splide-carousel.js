@@ -1,89 +1,98 @@
 import { __ } from '@wordpress/i18n';
-import { useBlockProps, useInnerBlocksProps, store as blockEditorStore } from '@wordpress/block-editor';
+import { useBlockProps, useInnerBlocksProps, BlockControls } from '@wordpress/block-editor';
+import { getBlockType, createBlock, store as blocksStore } from '@wordpress/blocks';
 import { useEffect, useRef, useState, cloneElement } from '@wordpress/element';
+import { ToolbarGroup, ToolbarButton } from '@wordpress/components';
 import { useSelect, dispatch } from '@wordpress/data';
-import { getBlockType } from '@wordpress/blocks';
-import { store as blocksStore } from '@wordpress/blocks';
 
 import Splide from '@splidejs/splide';
-import { getBreakpoints } from '@groundworx/utils';
 
-import { mountCounter, mountProgressBar, mountArrowPath } from './../utils/carousel'
-import { PAGINATION_SHAPES } from './../utils/carousel-ui';
-import CarouselToolbar from './carousel-toolbar';
+import { mountCounter, mountProgressBar } from './../utils/carousel'
+import { ARROW_STYLES, PAGINATION_STYLES } from './../utils/carousel-ui';
 
-// Helpers
-function getEditorCanvasWidth() {
-	const el = getEditorCanvasElement();
-	return el?.getBoundingClientRect?.().width || window.innerWidth;
-}
+import { useCarouselBreakpoint } from './hooks/utils';
 
-function getEditorCanvasElement() {
-	const iframe = document.querySelector('iframe[name="editor-canvas"]');
-	if (iframe?.contentDocument?.body) return iframe.contentDocument.body;
-
-	return document.querySelector('.editor-styles-wrapper');
-}
-
-function getEditorAdjustment() {
-	return window.innerWidth - getEditorCanvasWidth();
-}
-
-function resolveBreakpoints(options = {}, mapBreakpoints = null) {
-	if (!options.breakpoints) return options;
-	const resolvedBreakpoints = {};
-
-	for (const key in options.breakpoints) {
-		let breakpointValue = getBreakpoints.resolve(key);
-		if (typeof mapBreakpoints === 'object' && mapBreakpoints[key] !== undefined) {
-			breakpointValue = parseInt(mapBreakpoints[key]);
-		} else if (typeof mapBreakpoints === 'function') {
-			breakpointValue = parseInt(mapBreakpoints(key, breakpointValue));
-		}
-		if (!isNaN(breakpointValue)) {
-			resolvedBreakpoints[breakpointValue] = options.breakpoints[key];
+function getResolvedOption(options, optionName) {
+	const width = window.innerWidth;
+	
+	let value = options[optionName];
+	
+	if (options.breakpoints) {
+		const sortedBreakpoints = Object.keys(options.breakpoints)
+			.map(bp => parseInt(bp))
+			.sort((a, b) => a - b);
+		
+		for (const bp of sortedBreakpoints) {
+			if (width >= bp && options.breakpoints[bp] && options.breakpoints[bp][optionName] !== undefined) {
+				value = options.breakpoints[bp][optionName];
+			}
 		}
 	}
-
-	return { ...options, breakpoints: resolvedBreakpoints };
+	
+	return value;
 }
 
-function createForcedOptions(splideOptions, adjustment = 0) {
-	return {
-		...splideOptions,
-		breakpoints: resolveBreakpoints(splideOptions, getBreakpoints.all(adjustment)).breakpoints,
+function updateFeatureClasses(el, options) {
+	if (!el || !options) return;
+	
+	const features = {
+		'arrows': getResolvedOption(options, 'arrows'),
+		'pagination': getResolvedOption(options, 'pagination'),
+		'counter': getResolvedOption(options, 'counter'),
+		'progressBar': getResolvedOption(options, 'progressBar')
 	};
+	
+	Object.keys(features).forEach(feature => {
+		const className = `splide--has-${feature.toLowerCase()}`;
+		if (features[feature] === true) {
+			el.classList.add(className);
+		} else {
+			el.classList.remove(className);
+		}
+	});
 }
 
-// Force Editor Safe Options
 function forceEditorSafeOptions(splide) {
 	const current = splide.options || {};
+	const isLoop = current.type === 'loop';
 
 	splide.options = {
 		...current,
-		type: current.type === 'loop' || current.type === 'fade' ? 'slide' : current.type,
+		clones: isLoop ? 1 : 0,
 		drag: false,
 		swipe: false,
-		clones: 0,
 		keyboard: false,
 		autoplay: false,
 		dragMinThreshold: 9999
 	};
+	
+	if (isLoop && splide.root) {
+		const clones = splide.root.querySelectorAll('.splide__slide--clone');
+		clones.forEach((clone) => {
+			clone.style.opacity = '0.5';
+			clone.style.cursor = 'pointer';
+			clone.style.pointerEvents = 'auto';
+		});
+	}
 }
 
 const DEFAULT_BLOCK = {
 	name: 'groundworx/slide'
 };
 
-// Main Component
 export default function SplideCarousel({ props = {} }) {
-	const { attributes, clientId, name, isSelected } = props;
+	const { attributes, clientId, name } = props;
 	const { splideOptions } = attributes;
 
 	const blockType = getBlockType(name);
 	const carouselSupport = blockType?.supports?.groundworx?.carousel || {};
+	const visibleBreakpoints = blockType?.supports?.groundworx?.breakpoints || [];
 
-	const [currentIndex, setCurrentIndex] = useState(0);
+	const { canvasWidth, activeBreakpoint, resolvedOptions } = useCarouselBreakpoint(
+		splideOptions,
+		visibleBreakpoints
+	);
+
 	const [splideInstance, setSplideInstance] = useState(null);
 
 	const blockProps = useBlockProps();
@@ -111,178 +120,173 @@ export default function SplideCarousel({ props = {} }) {
 
 	const splideWrapperRef = useRef(null);
 	const splideInstanceRef = useRef(null);
+	const prevBreakpointsRef = useRef(null);
+	const lastNavigatedIndexRef = useRef(-1);
+
+	const { innerBlocks } = useSelect((select) => {
+		const block = select('core/block-editor').getBlock(clientId);
+		return {
+			innerBlocks: block?.innerBlocks || []
+		};
+	}, [clientId]);
 
 	const slides = (Array.isArray(innerBlocksProps.children) ? innerBlocksProps.children : [innerBlocksProps.children])
 		.filter(Boolean)
 		.map((child) => <>{cloneElement(child)}</>);
+		
+	const slideCountRef = useRef(slides.length);
+	const slideContentRef = useRef(JSON.stringify(slides));
 
-	// Mount Splide
+	useEffect(() => {
+		const currentContent = JSON.stringify(slides);
+		const contentChanged = slideContentRef.current !== currentContent;
+		const countChanged = slideCountRef.current !== slides.length;
+
+		if ((contentChanged || countChanged) && splideInstance) {
+			slideContentRef.current = currentContent;
+			slideCountRef.current = slides.length;
+			
+			setTimeout(() => {
+				splideInstance.refresh();
+			}, 100);
+		}
+	}, [slides, splideInstance]);
+
+	const breakpointsChanged = (prev, current) => {
+		if (!prev && !current) return false;
+		if (!prev || !current) return true;
+		return JSON.stringify(prev) !== JSON.stringify(current);
+	};
+
 	useEffect(() => {
 		const el = splideWrapperRef.current;
 		if (!el) return;
 
-		const adjustment = getEditorAdjustment();
+		const needsRemount = !splideInstanceRef.current || 
+			breakpointsChanged(prevBreakpointsRef.current, resolvedOptions.breakpoints);
 
-		const initialOptions = createForcedOptions(attributes.splideOptions, adjustment);
-		
-		if (!splideInstanceRef.current) {
-			const splide = new Splide(el, initialOptions);
-			splideInstanceRef.current = splide;
+		if (needsRemount) {
+			if (splideInstanceRef.current) {
+				splideInstanceRef.current.destroy(true);
+				splideInstanceRef.current = null;
+			}
 
+			const arrowStyle = attributes.arrowStyle || 'chevron';
+			const arrowData = ARROW_STYLES[arrowStyle] || ARROW_STYLES.chevron;
+			
+			const splideOptionsWithArrow = {
+				...resolvedOptions,
+				arrowPath: arrowData.path
+			};
+
+			const splide = new Splide(el, splideOptionsWithArrow);
+			
+			splide.on('pagination:mounted', function (data) {
+				const paginationStyle = el.dataset.pagination || 'circle';
+				data.list.classList.add('splide__pagination--custom');
+
+				data.items.forEach(function (item) {
+					if (paginationStyle === 'number') {
+						item.button.textContent = String(item.page + 1);
+						return;
+					}
+
+					const style = PAGINATION_STYLES[paginationStyle] || PAGINATION_STYLES.circle;
+					if (style && style.svg) {
+						item.button.innerHTML = style.svg;
+					}
+				});
+			});
+			
 			splide.on('mounted', () => {
 				forceEditorSafeOptions(splide);
+				mountCounter(splide, el);
+				mountProgressBar(splide, el);
+				updateFeatureClasses(el, resolvedOptions);
+				setSplideInstance(splide);
+			});
+
+			splide.on('click', (e) => {
+				lastNavigatedIndexRef.current = e.index;
+				splide.go(e.index);
 			});
 			
 			splide.mount();
-			
+			splideInstanceRef.current = splide;
+
+			prevBreakpointsRef.current = resolvedOptions.breakpoints;
 		} else {
-			splideInstanceRef.current.refresh();
+			const splide = splideInstanceRef.current;
+			if (splide && !splide.state.is(Splide.STATES.DESTROYED)) {
+				const { breakpoints, ...otherOptions } = resolvedOptions;
+				Object.assign(splide.options, otherOptions);
+				forceEditorSafeOptions(splide);
+				splide.refresh();
+
+				mountCounter(splide, el);
+				mountProgressBar(splide, el);
+				updateFeatureClasses(el, resolvedOptions);
+			}
 		}
 
-		const list = el.querySelector('.splide__list');
-		const observer = list ? new MutationObserver((mutationsList) => {
-			let addedSlideNode = null;
-
-			for (const mutation of mutationsList) {
-				for (const node of mutation.addedNodes) {
-					if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('splide__slide')) {
-						addedSlideNode = node;
-						break;
-					}
-				}
-				if (addedSlideNode) break;
-			}
-
-			if (addedSlideNode && splideInstanceRef.current) {
-				const slides = Array.from(list.querySelectorAll('.splide__slide'));
-				const newIndex = slides.indexOf(addedSlideNode);
-
-				splideInstanceRef.current.refresh();
-			}
-		}) : null;
-
-		if (observer && list) {
-			observer.observe(list, { childList: true });
-		}
-
-		// Clean up
 		return () => {
-			if (observer) observer.disconnect();
+			if (splideInstanceRef.current) {
+				splideInstanceRef.current.destroy(true);
+				splideInstanceRef.current = null;
+			}
 		};
+	}, [resolvedOptions]);
 
-	}, []);
-
-	function createAndMountSplide(el, attributes, adjustment = 0) {
-		const options = createForcedOptions(attributes.splideOptions, adjustment);
-		const splide = new Splide(el, options);
-		
-		splide.on('pagination:mounted', function (data) {
-			const paginationStyle = el.dataset.pagination || 'circle';
-			data.list.classList.add('splide__pagination--custom');
-
-			data.items.forEach(function (item) {
-				if (paginationStyle === 'number') {
-					item.button.textContent = String(item.page + 1);
-					return;
-				}
-
-				item.button.innerHTML = PAGINATION_SHAPES[paginationStyle] || PAGINATION_SHAPES.circle;
-			});
-		});
-		
-		splide.on('move', (newIndex) => {
-			setCurrentIndex(newIndex);
-		});
-
-		splide.on('mounted', () => {
-			forceEditorSafeOptions(splide);
-			mountArrowPath(splide, el);
-			mountCounter(splide, el);
-			mountProgressBar(splide, el);
-			setSplideInstance(splide);
-		});
-		
-		splide.mount();
-
-		return splide;
-	}
-
-	// Watch splideOptions (live changes)
 	useEffect(() => {
-		const el = splideWrapperRef.current;
-		if (!el) return;
-
-		const adjustment = getEditorAdjustment();
-
-		if (splideInstanceRef.current) {
+		if (splideInstanceRef.current && splideWrapperRef.current) {
 			splideInstanceRef.current.destroy(true);
+			splideInstanceRef.current = null;
+			
+			const el = splideWrapperRef.current;
+			const arrowStyle = attributes.arrowStyle || 'chevron';
+			const arrowData = ARROW_STYLES[arrowStyle] || ARROW_STYLES.chevron;
+			
+			const splideOptionsWithArrow = {
+				...resolvedOptions,
+				arrowPath: arrowData.path
+			};
+			
+			const splide = new Splide(el, splideOptionsWithArrow);
+			
+			splide.on('pagination:mounted', function (data) {
+				const paginationStyle = el.dataset.pagination || 'circle';
+				data.list.classList.add('splide__pagination--custom');
+
+				data.items.forEach(function (item) {
+					if (paginationStyle === 'number') {
+						item.button.textContent = String(item.page + 1);
+						return;
+					}
+
+					const style = PAGINATION_STYLES[paginationStyle] || PAGINATION_STYLES.circle;
+					if (style && style.svg) {
+						item.button.innerHTML = style.svg;
+					}
+				});
+			});
+			
+			splide.on('mounted', () => {
+				forceEditorSafeOptions(splide);
+				mountCounter(splide, el);
+				mountProgressBar(splide, el);
+				updateFeatureClasses(el, resolvedOptions);
+				setSplideInstance(splide);
+			});
+
+			splide.on('click', (e) => {
+				lastNavigatedIndexRef.current = e.index;
+				splide.go(e.index);
+			});
+			
+			splide.mount();
+			splideInstanceRef.current = splide;
 		}
-
-		splideInstanceRef.current = createAndMountSplide(el, attributes, adjustment);
-	}, [attributes.splideOptions]);
-
-	// Resize observer
-	useEffect(() => {
-		const el = splideWrapperRef.current;
-		if (!el || !splideInstanceRef.current) return;
-	
-		let previousContainerWidth = getEditorCanvasWidth();
-		let timeoutId = null;
-	
-		const resizeObserver = new ResizeObserver(() => {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => {
-				const newContainerWidth = getEditorCanvasWidth();
-				if (newContainerWidth !== previousContainerWidth) {
-					splideInstanceRef.current.destroy(true);
-					splideInstanceRef.current = createAndMountSplide(el, attributes, getEditorAdjustment());
-					previousContainerWidth = newContainerWidth;
-				} else {
-					splideInstanceRef.current.refresh();
-				}
-			}, 100);
-		});
-	
-		resizeObserver.observe(el);
-		return () => {
-			clearTimeout(timeoutId);
-			resizeObserver.disconnect();
-		};
-	}, [attributes.splideOptions]);
-	
-
-	// Sync selected block in editor
-	const selectedBlockClientId = useSelect((select) => select(blockEditorStore).getSelectedBlockClientId(), []);
-	const slideIndex = useSelect((select) => {
-		const { getBlock, getBlockRootClientId } = select(blockEditorStore);
-		const block = getBlock(clientId);
-		if (!block || !block.innerBlocks?.length) return -1;
-	
-		let selectedId = selectedBlockClientId;
-	
-		// Climb up the tree until we find a direct child of the carousel
-		while (selectedId) {
-			const parentId = getBlockRootClientId(selectedId);
-			if (parentId === clientId) {
-				break; // found a direct child of carousel (a slide)
-			}
-			selectedId = parentId;
-		}
-	
-		return block.innerBlocks.findIndex((inner) => inner.clientId === selectedId);
-	}, [selectedBlockClientId]);
-
-	useEffect(() => {
-		const splide = splideInstanceRef.current;
-	
-		if (!splide || slideIndex < 0) return;
-	
-		// Don't proceed if destroyed
-		if (splide.state.is(Splide.STATES.DESTROYED)) return;
-	
-		splide.go(slideIndex);
-	
-	}, [slideIndex]);
+	}, [attributes.arrowStyle, attributes.paginationStyle]);
 
 	useEffect(() => {
 		const el = splideWrapperRef.current;
@@ -292,31 +296,96 @@ export default function SplideCarousel({ props = {} }) {
 			const block = wp.data.select('core/block-editor').getBlock(clientId);
 			if (!block?.innerBlocks?.length) return;
 	
-			const slideElements = Array.from(el.querySelectorAll('.splide__slide'));
 			const clickedSlide = event.target.closest('.splide__slide');
-			if (!clickedSlide || !slideElements.includes(clickedSlide)) {
+			if (!clickedSlide) return;
+			
+			if (clickedSlide.classList.contains('splide__slide--clone')) {
+				const cloneBlockId = clickedSlide.getAttribute('data-block');
+				
+				if (cloneBlockId) {
+					const realBlock = block.innerBlocks.find(inner => inner.clientId === cloneBlockId);
+					if (realBlock) {
+						dispatch('core/block-editor').selectBlock(cloneBlockId);
+						event.stopPropagation();
+						return;
+					}
+				}
+			}
+			
+			const slideElements = Array.from(el.querySelectorAll('.splide__slide:not(.splide__slide--clone)'));
+			if (!slideElements.includes(clickedSlide)) {
 				dispatch('core/block-editor').selectBlock(clientId);
 				return;
 			}
 		};
 	
-		el.addEventListener('click', handleClick);
-		return () => el.removeEventListener('click', handleClick);
-	}, []);
+		el.addEventListener('click', handleClick, true);
+		return () => el.removeEventListener('click', handleClick, true);
+	}, [clientId]);
 
-	const arrowStyle = attributes.arrowStyle || carouselSupport.arrowStyle || 'chevron';
-	const paginationStyle = attributes.paginationStyle || carouselSupport.paginationStyle || 'circle';
+	useEffect(() => {
+		if (!splideInstance) return;
+
+		const unsubscribe = wp.data.subscribe(() => {
+			const carouselBlock = wp.data.select('core/block-editor').getBlock(clientId);
+			if (!carouselBlock?.innerBlocks?.length) return;
+
+			const selectedIndex = carouselBlock.innerBlocks.findIndex(child =>
+				wp.data.select('core/block-editor').isBlockSelected(child.clientId)
+			);
+
+			if (selectedIndex >= 0 && selectedIndex !== lastNavigatedIndexRef.current) {
+				lastNavigatedIndexRef.current = selectedIndex;
+				
+				const listViewOpen = !!document.querySelector('.block-editor-list-view');
+				
+				if (listViewOpen && splideInstance.options.type === 'loop') {
+					splideInstance.options.type = 'slide';
+					splideInstance.options.rewind = true;
+					splideInstance.refresh();
+					
+					setTimeout(() => {
+						splideInstance.go(selectedIndex);
+					}, 50);
+				} else {
+					splideInstance.go(selectedIndex);
+					
+					setTimeout(() => {
+						splideInstance.refresh();
+					}, 100);
+				}
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, [splideInstance, clientId]);
 
 	const splideBlockProps = {
 		ref: splideWrapperRef,
 		className: 'splide',
-		'aria-label': __('Carousel Preview'),
-		'data-arrow': arrowStyle,
-		'data-pagination': paginationStyle,
+		'aria-label': __('Carousel Preview', 'groundworx-carousel'),
+		'data-arrow': attributes.arrowStyle || 'chevron',
+		'data-pagination': attributes.paginationStyle || 'circle',
 	};
-	// Render
+
 	return (
 		<>
+			<BlockControls>
+				<ToolbarGroup label={__('Slides', 'groundworx-carousel')}>
+					<ToolbarButton
+						variant="primary"
+						label={__('Add Slide to Carousel', 'groundworx-carousel')}
+						onClick={() => {
+							const newSlide = createBlock('groundworx/slide');
+							dispatch('core/block-editor').insertBlock(newSlide, innerBlocks.length, clientId);
+						}}
+					>
+						{__('Add Slide', 'groundworx-carousel')}
+					</ToolbarButton>
+				</ToolbarGroup>
+			</BlockControls>
 			<div {...splideBlockProps}>
 				<div class="splide__wrapper">
 					<div class="splide__arrows" />
@@ -328,7 +397,6 @@ export default function SplideCarousel({ props = {} }) {
 					</div>
 				</div>
 			</div>
-			<CarouselToolbar clientId={clientId} instance={splideInstance} currentIndex={currentIndex} />
 		</>
 	);
 }

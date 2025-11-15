@@ -1,8 +1,3 @@
-/**
- * Mounts a arrowPath inside the Splide instance if enabled.
- * @param {Splide} splide
- * @param {HTMLElement} el
- */
 export function mountArrowPath(splide, el) {
 	const arrowPath = el.dataset.arrow;
 	if (arrowPath) {
@@ -12,11 +7,6 @@ export function mountArrowPath(splide, el) {
 	}
 }
 
-/**
- * Mounts a counter UI inside the Splide instance if enabled.
- * @param {Splide} splide
- * @param {HTMLElement} el
- */
 export function mountCounter(splide, el) {
 	if (!splide.options.counter) return;
 
@@ -56,11 +46,6 @@ export function mountCounter(splide, el) {
 	});
 }
 
-/**
- * Mounts a progress bar UI inside the Splide instance if enabled.
- * @param {Splide} splide
- * @param {HTMLElement} el
- */
 export function mountProgressBar(splide, el) {
 	if (!splide.options.progressBar) return;
 

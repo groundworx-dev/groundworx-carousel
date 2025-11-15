@@ -1,20 +1,26 @@
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { InspectorControls, __experimentalGetGapCSSValue as getGapCSSValue } from '@wordpress/block-editor';
-import { __experimentalToolsPanel as ToolsPanel, __experimentalToolsPanelItem as ToolsPanelItem, TabPanel, ToggleControl, SelectControl } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { __experimentalToolsPanel as ToolsPanel, __experimentalToolsPanelItem as ToolsPanelItem, TabPanel, SelectControl, ToggleControl } from '@wordpress/components';
+import { useEffect, useState, useMemo } from '@wordpress/element';
 import { getBlockType } from '@wordpress/blocks';
 
 import { useToolsPanelDropdownMenuProps, getBreakpoints } from '@groundworx/utils';
 import { ColumnControl } from '@groundworx/components';
 import { mobile, largeMobile, tablet, largeTablet, laptop, desktop, largeDesktop } from '@groundworx/icons';
 
-import ResponsiveGridLayoutPanel from './responsive-grid-layout-panel';
-import OptionWidthLayoutPanel from './option-width-layout-panel';
+import { useSplideOptions, useBreakpointLayout } from './hooks/use-responsive-state';
+import { ResponsiveToggleControl, ResponsiveSelectControl, ResponsiveRangeControl, ResponsiveMultiControl } from './components/responsive-controls';
+import { ArrowStyleControl, PaginationStyleControl } from './components/carousel-style-controls';
+import ResponsiveGridLayoutPanel from './components/responsive-grid-layout-panel';
+import OptionWidthLayoutPanel from './components/option-width-layout-panel';
+import { getAvailableTemplates } from './../templates';
 
 const DEFAULT_VALUES = {
 	type: { default: 'slide', breakpoint: undefined },
-	focus: { default: false, breakpoint: undefined },
+	focus: { default: '', breakpoint: undefined },
 	rewind: { default: false, breakpoint: undefined },
+	omitEnd: { default: false, breakpoint: undefined },
+	trimSpace: { default: false, breakpoint: undefined },
 	autoplay: { default: false, breakpoint: undefined },
 	pagination: { default: false, breakpoint: undefined },
 	arrows: { default: false, breakpoint: undefined },
@@ -23,109 +29,21 @@ const DEFAULT_VALUES = {
 	perMove: { default: 1, breakpoint: undefined },
 	progressBar: { default: false, breakpoint: undefined },
 	counter: { default: false, breakpoint: undefined },
-	splide: { default: 'chevron', breakpoint: undefined },
-	sameHeight: { default: false, breakpoint: undefined },
-	columnCount: { default: 1, breakpoint: undefined },
-	minimumColumnWidth: { default: undefined, breakpoint: undefined }
+	destroy: { default: false, breakpoint: undefined },
 };
 
-const DEFAULT_SPLIDE_OPTIONS = Object.fromEntries(
-	Object.entries(DEFAULT_VALUES)
-		.filter(([key]) => key in DEFAULT_VALUES)
-		.map(([key, obj]) => [key, obj.default])
-);
-
-function mergeSplideDefaults(splideOptions = {}) {
-	return {
-		...DEFAULT_SPLIDE_OPTIONS,
-		...splideOptions,
-	};
-}
-
-function getResponsiveValue(source, key, tab) {
-	if (tab === 'default') return source[key];
-	return source?.breakpoints?.[tab]?.[key];
-}
-
-function getResponsiveDefaultValue(key, tab) {
-	const def = DEFAULT_VALUES[key];
-	if (!def) return undefined;
-	return tab === 'default' ? def.default : def.breakpoint;
-}
-
-function hasResponsiveValue(source, key, tab) {
-	const currentValue = getResponsiveValue(source, key, tab);
-	const defaultValue = getResponsiveDefaultValue(key, tab);
-	return currentValue !== undefined && currentValue !== defaultValue;
-}
-
-function setResponsiveValue(source, key, tab, value) {
-	const updated = { ...source };
-
-	if (tab === 'default') {
-		if (value === undefined) {
-			delete updated[key];
-		} else {
-			updated[key] = value;
-		}
-	} else {
-		const breakpoints = { ...(updated.breakpoints || {}) };
-		const tabData = { ...(breakpoints[tab] || {}) };
-
-		if (value === undefined) {
-			delete tabData[key];
-		} else {
-			tabData[key] = value;
-		}
-
-		if (Object.keys(tabData).length === 0) {
-			delete breakpoints[tab];
-		} else {
-			breakpoints[tab] = tabData;
-		}
-
-		updated.breakpoints = breakpoints;
-	}
-
-	return updated;
-}
-
-function getBreakpointValue(source, key, tab) {
-	if (tab === 'default') return undefined;
-	return source?.[tab]?.[key];
-}
-
-function setBreakpointValue(source, key, tab, value) {
-	const updated = { ...source };
-	const tabData = { ...(updated[tab] || {}) };
-
-	if (value === undefined) {
-		delete tabData[key];
-	} else {
-		tabData[key] = value;
-	}
-
-	if (Object.keys(tabData).length === 0) {
-		delete updated[tab];
-	} else {
-		updated[tab] = tabData;
-	}
-
-	return updated;
-}
-
-function hasBreakpointValue(source, key, tab, defaultValue, fallbackTab = null) {
-	const currentValue = source?.[tab]?.[key];
-	const compareValue = defaultValue ?? getResponsiveDefaultValue(key, fallbackTab || tab);
-	return currentValue !== undefined && currentValue !== compareValue;
-}
+const GRID_DEFAULT_VALUES = {
+	columnCount: { default: 3, breakpoint: undefined },
+	minimumColumnWidth: { default: undefined, breakpoint: undefined },
+	type: { default: 'grid', breakpoint: undefined },
+	sameHeight: { default: false, breakpoint: undefined }
+};
 
 export default function CarouselInspectorPanel({ attributes, setAttributes, name }) {
-
-	const { breakpoints = {}, style } = attributes;
-
-	const rawOptions = attributes.splideOptions || {};
-	const splideOptions = mergeSplideDefaults(rawOptions);
+	const { style } = attributes;
+	
+	const splideState = useSplideOptions(attributes, setAttributes, DEFAULT_VALUES);
+	const layoutState = useBreakpointLayout(attributes, setAttributes);
 
 	const dropdownMenuProps = useToolsPanelDropdownMenuProps();
 	const blockType = getBlockType(name);
@@ -133,520 +51,529 @@ export default function CarouselInspectorPanel({ attributes, setAttributes, name
 	
 	const [resettingTab, setResettingTab] = useState(null);
 
-	const generateLabels = (bp) =>
-		Object.keys(bp).reduce((acc, key) => {
-			acc[key] = key
-				.replace(/-/g, ' ')
-				.split(' ')
-				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-				.join(' ');
-			return acc;
-		}, {});
+	const breakpointLabels = Object.keys(getBreakpoints.all()).reduce((acc, key) => {
+		acc[key] = key.replace(/-/g, ' ').split(' ')
+			.map(w => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
+		return acc;
+	}, {});
 
-	const aliases = generateLabels(getBreakpoints.all());
-	
 	const breakpointTabs = [
-		{ 
-			name: 'default', 
-			icon: mobile, 
-			title: __('Default') 
-		},
+		{ name: 'default', icon: mobile, title: __('Default', 'groundworx-carousel') },
 		...visibleBreakpoints.map((key) => ({
 			name: key,
-			icon: (
-				key === 'large-mobile' ? largeMobile :
-				key === 'tablet' ? tablet :
-				key === 'large-tablet' ? largeTablet :
-				key === 'laptop' ? laptop :
-				key === 'desktop' ? desktop :
-				key === 'large-desktop' ? largeDesktop :
-				null
-			),
-			title: __( (aliases[key] || key).replace(/^./, str => str.toUpperCase()) ),
+			icon: {
+				'large-mobile': largeMobile,
+				'tablet': tablet,
+				'large-tablet': largeTablet,
+				'laptop': laptop,
+				'desktop': desktop,
+				'large-desktop': largeDesktop
+			}[key] || mobile,
+			title: breakpointLabels[key] || key,
 		})),
 	];
 
-	// Set gap on slides
 	useEffect(() => {
 		const blockGap = style?.spacing?.blockGap;
-		if (blockGap !== undefined) {
-			const fallback = 'var(--wp--style--block-gap, 1rem)';
-			let column = fallback;
-			let row = fallback;
-			if (typeof blockGap === 'string' || typeof blockGap === 'number') {
-				column = row = getGapCSSValue(blockGap);
-			} else {
-				row = getGapCSSValue(blockGap?.top) ?? fallback;
-				column = getGapCSSValue(blockGap?.left) ?? fallback;
-			}
-			let gapValue = row === column ? row : `${row} ${column}`;
-			if (gapValue === '0' || gapValue === 0) gapValue = '0px';
-			if (splideOptions.gap !== gapValue) {
-				setAttributes({ splideOptions: { ...splideOptions, gap: gapValue } });
-			}
+		if (blockGap === undefined) return;
+
+		const fallback = 'var(--wp--style--block-gap, 1rem)';
+		let column = fallback;
+		let row = fallback;
+
+		if (typeof blockGap === 'string' || typeof blockGap === 'number') {
+			column = row = getGapCSSValue(blockGap);
+		} else {
+			row = getGapCSSValue(blockGap?.top) ?? fallback;
+			column = getGapCSSValue(blockGap?.left) ?? fallback;
+		}
+
+		let gapValue = row === column ? row : `${row} ${column}`;
+		if (gapValue === '0' || gapValue === 0) gapValue = '0px';
+		
+		if (splideState.get('gap') !== gapValue) {
+			splideState.set('gap', 'default', gapValue);
 		}
 	}, [style?.spacing?.blockGap]);
 
-	useEffect(() => {
-		const all = [['default', splideOptions], ...Object.entries(splideOptions.breakpoints || {})];
-		all.forEach(([key, settings]) => {
-			let desired = undefined;
-			if (settings?.focus === 'center') desired = false;
-			else if (settings?.focus) desired = true;
-			if (settings?.trimSpace !== desired) {
-				const updated = setResponsiveValue(splideOptions, 'trimSpace', key, desired);
-				setAttributes({ splideOptions: updated });
-			}
-		});
-	}, [splideOptions]);
+	const isBreakpointDestroyed = (breakpoint) => {
+		if (breakpoint === 'default') return false;
 
-	function isBreakpointDestroyed(splideOptions, tabName, visibleBreakpoints) {
-		if (tabName === 'default') return false;
-
-		const destroyAt = visibleBreakpoints.find(
-			(bp) => getResponsiveValue(splideOptions, 'destroy', bp) === true
+		const destroyedAt = visibleBreakpoints.find(
+			bp => splideState.get('destroy', bp) === true
 		);
 
-		if (!destroyAt) return false;
+		if (!destroyedAt) return false;
 
-		const destroyIndex = visibleBreakpoints.indexOf(destroyAt);
-		const currentIndex = visibleBreakpoints.indexOf(tabName);
+		const destroyIndex = visibleBreakpoints.indexOf(destroyedAt);
+		const currentIndex = visibleBreakpoints.indexOf(breakpoint);
 
-		// Only return true for this and larger breakpoints
 		return currentIndex >= destroyIndex;
-	}
+	};
 
-	function getFirstDestroyedBreakpoint(splideOptions, visibleBreakpoints) {
-		return visibleBreakpoints.find(
-			(bp) => getResponsiveValue(splideOptions, 'destroy', bp) === true
-		);
-	}
+	const getFirstDestroyedBreakpoint = () => {
+		return visibleBreakpoints.find(bp => splideState.get('destroy', bp) === true);
+	};
 
-	function setLayoutValue(breakpoints, tab, key, value) {
-		const next = { ...breakpoints };
-		const layout = { ...(next[tab]?.layout || {}) };
-	
-		if (value === undefined) {
-			delete layout[key];
-		} else {
-			layout[key] = value;
-		}
-	
-		if (Object.keys(layout).length === 0) {
-			if (next[tab]) {
-				delete next[tab].layout;
-				if (Object.keys(next[tab]).length === 0) {
-					delete next[tab];
-				}
-			}
-		} else {
-			next[tab] = {
-				...(next[tab] || {}),
-				layout,
+	const currentDestroyValue = useMemo(() => {
+		const destroyed = getFirstDestroyedBreakpoint();
+		return destroyed || 'never';
+	}, [attributes.splideOptions, visibleBreakpoints]);
+
+	const availableTemplates = getAvailableTemplates();
+
+	const breakpointIconMap = {
+		'large-mobile': largeMobile,
+		'tablet': tablet,
+		'large-tablet': largeTablet,
+		'laptop': laptop,
+		'desktop': desktop,
+		'large-desktop': largeDesktop
+	};
+
+	const destroyOptions = [
+		{ 
+			label: __('Never (Always Carousel)', 'groundworx-carousel'),
+			value: 'never',
+			icon: mobile
+		},
+		...visibleBreakpoints.map(breakpoint => {
+			const label = breakpoint
+				.split('-')
+				.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(' ');
+			
+			return {
+				label: sprintf(__('At %s', 'groundworx-carousel'), label),
+				value: breakpoint,
+				icon: breakpointIconMap[breakpoint] || mobile
 			};
-		}
-	
-		return next;
-	}
-
-	function setMultipleResponsiveValues(source, tab, updates = {}) {
-		const updated = { ...source };
-		const isDefault = tab === 'default';
-
-		if (isDefault) {
-			for (const key in updates) {
-				if (updates[key] === undefined) {
-					delete updated[key];
-				} else {
-					updated[key] = updates[key];
-				}
-			}
-		} else {
-			const breakpoints = { ...(updated.breakpoints || {}) };
-			const tabData = { ...(breakpoints[tab] || {}) };
-	
-			for (const key in updates) {
-				if (updates[key] === undefined) {
-					delete tabData[key];
-				} else {
-					tabData[key] = updates[key];
-				}
-			}
-
-			if (Object.keys(tabData).length === 0) {
-				delete breakpoints[tab];
-			} else {
-				breakpoints[tab] = tabData;
-			}
-	
-			updated.breakpoints = breakpoints;
-		}
-	
-		return updated;
-	}
-	
-
-	function hasLayoutOverride(breakpoints, tab, key, fallbackTab = null) {
-		const current = breakpoints?.[tab]?.layout?.[key];
-		const fallback = getResponsiveDefaultValue(key, fallbackTab || tab);
-		return current !== undefined && current !== fallback;
-	}
-
-	function resetLayoutValues(breakpoints, tab, keys = [], fallbackTab = null) {
-		let updated = { ...breakpoints };
-		for (const key of keys) {
-			const fallback = getResponsiveDefaultValue(key, fallbackTab || tab);
-			updated = setLayoutValue(updated, tab, key, fallback);
-		}
-		return updated;
-	}
+		})
+	];
 
 	return (
 		<InspectorControls>
+			<ToolsPanel 
+				label={__('Layout', 'groundworx-carousel')} 
+				dropdownMenuProps={dropdownMenuProps}
+				className="carousel-layout-panel"
+			>
+				<ToolsPanelItem
+					label={__('Template', 'groundworx-carousel')}
+					hasValue={() => attributes.template && attributes.template !== 'default'}
+					onDeselect={() => setAttributes({ template: 'default' })}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Template', 'groundworx-carousel')}
+						value={attributes.template || 'default'}
+						onChange={(value) => setAttributes({ template: value })}
+						options={availableTemplates}
+						help={__('Choose the layout structure for your carousel', 'groundworx-carousel')}
+						__nextHasNoMarginBottom
+					/>
+				</ToolsPanelItem>
+
+				<ArrowStyleControl
+					value={attributes.arrowStyle || 'chevron'}
+					onChange={(value) => setAttributes({ arrowStyle: value })}
+					hasValue={() => !!attributes.arrowStyle && attributes.arrowStyle !== 'chevron'}
+					onDeselect={() => setAttributes({ arrowStyle: 'chevron' })}
+				/>
+
+				<PaginationStyleControl
+					value={attributes.paginationStyle || 'circleOutline'}
+					onChange={(value) => setAttributes({ paginationStyle: value })}
+					hasValue={() => !!attributes.paginationStyle && attributes.paginationStyle !== 'circleOutline'}
+					onDeselect={() => setAttributes({ paginationStyle: 'circleOutline' })}
+				/>
+
+				<ToolsPanelItem
+					label={__('Disable Carousel At', 'groundworx-carousel')}
+					hasValue={() => {
+						return visibleBreakpoints.some(bp => 
+							splideState.get('destroy', bp) !== undefined
+						);
+					}}
+					onDeselect={() => {
+						visibleBreakpoints.forEach(bp => {
+							splideState.set('destroy', bp, undefined);
+						});
+					}}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Disable Carousel At', 'groundworx-carousel')}
+						value={currentDestroyValue}
+						onChange={(value) => {
+							if (!value) return;
+							
+							const updated = { ...attributes.splideOptions };
+							const breakpoints = { ...(updated.breakpoints || {}) };
+							
+							Object.keys(breakpoints).forEach(bp => {
+								const bpData = { ...breakpoints[bp] };
+								delete bpData.destroy;
+								
+								if (Object.keys(bpData).length === 0) {
+									delete breakpoints[bp];
+								} else {
+									breakpoints[bp] = bpData;
+								}
+							});
+							
+							if (value !== 'never') {
+								const bpData = { ...(breakpoints[value] || {}) };
+								bpData.destroy = true;
+								breakpoints[value] = bpData;
+							}
+							
+							if (Object.keys(breakpoints).length === 0) {
+								delete updated.breakpoints;
+							} else {
+								updated.breakpoints = breakpoints;
+							}
+							
+							setAttributes({ splideOptions: updated });
+							
+							if (value !== 'never') {
+								const layoutBreakpoints = { ...(attributes.breakpoints || {}) };
+								
+								const destroyIndex = visibleBreakpoints.indexOf(value);
+								const destroyedBreakpoints = visibleBreakpoints.slice(destroyIndex);
+								
+								destroyedBreakpoints.forEach((bp, index) => {
+									const isFirst = index === 0;
+									
+									if (isFirst) {
+										layoutBreakpoints[bp] = {
+											layout: {
+												type: GRID_DEFAULT_VALUES.type.default,
+												columnCount: GRID_DEFAULT_VALUES.columnCount.default,
+												minimumColumnWidth: GRID_DEFAULT_VALUES.minimumColumnWidth.default
+											},
+											sameHeight: GRID_DEFAULT_VALUES.sameHeight.default
+										};
+										
+									} else {
+										layoutBreakpoints[bp] = {
+											layout: {
+												columnCount: undefined,
+												minimumColumnWidth: undefined
+											},
+											sameHeight: undefined
+										};
+									}
+								});
+								
+								Object.keys(layoutBreakpoints).forEach(bp => {
+									
+									if (layoutBreakpoints[bp].sameHeight === undefined) {
+										delete layoutBreakpoints[bp].sameHeight;
+									}
+									
+									const layoutKeys = Object.keys(layoutBreakpoints[bp].layout || {});
+									const allUndefined = layoutKeys.every(k => layoutBreakpoints[bp].layout[k] === undefined);
+									
+									if (allUndefined) {
+										delete layoutBreakpoints[bp].layout;
+									}
+									
+									if (Object.keys(layoutBreakpoints[bp]).length === 0) {
+										delete layoutBreakpoints[bp];
+									}
+								});
+								
+								setAttributes({ breakpoints: layoutBreakpoints });
+							}
+						}}
+						options={destroyOptions.map(option => ({
+							label: option.label,
+							value: option.value
+						}))}
+						help={__('Convert carousel to grid layout at larger screens', 'groundworx-carousel')}
+						__nextHasNoMarginBottom
+					/>
+				</ToolsPanelItem>
+			</ToolsPanel>
+
 			<TabPanel className="splide-breakpoint-tabs" tabs={breakpointTabs}>
 				{(tab) => {
-					const tabName = tab.name;
-					const isDefault = tabName === 'default';
-					//const isDestroyed = !isDefault && getResponsiveValue(splideOptions.breakpoints, 'destroy', tabName);
-					const isDestroyed = isBreakpointDestroyed(splideOptions, tabName, visibleBreakpoints);
-					const firstDestroyed = getFirstDestroyedBreakpoint(splideOptions, visibleBreakpoints);
-					const isFirstDestroy = tabName === firstDestroyed;
+					const breakpoint = tab.name;
+					const isDefault = breakpoint === 'default';
+					const isDestroyed = isBreakpointDestroyed(breakpoint);
+					const firstDestroyed = getFirstDestroyedBreakpoint();
+					const isFirstDestroy = breakpoint === firstDestroyed;
 
 					return (
-						<ToolsPanel key={tabName} label={tab.title} dropdownMenuProps={dropdownMenuProps}>
-							{ !isDestroyed ? (
+						<ToolsPanel 
+							key={breakpoint} 
+							label={tab.title} 
+							dropdownMenuProps={dropdownMenuProps}
+							resetAll={() => {
+								const keysToReset = Object.keys(DEFAULT_VALUES);
+								splideState.resetAll(keysToReset, breakpoint);
+							}}
+						>
+							{!isDestroyed && (
 								<>
-									
-									{ splideOptions.type !== 'fade' && (
-										<>
-											<ToolsPanelItem
-												label={__('Type')}
-												hasValue={() => hasResponsiveValue(splideOptions, 'type', tabName)}
-												onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'type', tabName, getResponsiveDefaultValue('type', tabName)) })}
-												isShownByDefault
-											>
-												<SelectControl
-													label={__('Type')}
-													value={getResponsiveValue(splideOptions, 'type', tabName) || ''}
-													onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'type', tabName, val || undefined) })}
-													options={[
-														...(!isDefault ? [{ label: 'Inherit', value: '' }] : []),
-														{ label: 'Slide', value: 'slide' },
-														{ label: 'Loop', value: 'loop' }
-													]}
-												/>
-											</ToolsPanelItem>
+									{splideState.get('type', breakpoint) !== 'fade' && (
+										<ResponsiveSelectControl
+											label={__('Type', 'groundworx-carousel')}
+											attribute="type"
+											breakpoint={breakpoint}
+											splideState={splideState}
+											options={[
+												{ label: __('Slide', 'groundworx-carousel'), value: 'slide' },
+												{ label: __('Loop', 'groundworx-carousel'), value: 'loop' }
+											]}
+										/>
+									)}
 
-											<ToolsPanelItem
-												label={__('Focus')}
-												hasValue={() => hasResponsiveValue(splideOptions, 'focus', tabName)}
-												onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'focus', tabName, getResponsiveDefaultValue('focus', tabName)) })}
-												isShownByDefault
-											>
-												<SelectControl
-													label={__('Focus')}
-													value={getResponsiveValue(splideOptions, 'focus', tabName) || ''}
-													onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'focus', tabName, val || undefined) })}
-													options={[
-														...(isDefault ? [] :[{ label: 'Inherit', value: "" }]),
-														...(isDefault ? [{ label: 'Off', value: "" }] : [{ label: 'Off', value: "null" }]),
-														{ label: 'Center', value: 'center' },
-													]}
-												/>
-											</ToolsPanelItem>
+									{splideState.get('type', breakpoint) !== 'fade' && (
+										<ResponsiveSelectControl
+											label={__('Focus', 'groundworx-carousel')}
+											attribute="focus"
+											breakpoint={breakpoint}
+											splideState={splideState}
+											options={[
+												{ label: __('Off', 'groundworx-carousel'), value: isDefault ? '' : 'null' },
+												{ label: __('Center', 'groundworx-carousel'), value: 'center' }
+											]}
+										/>
+									)}
 
-											<ToolsPanelItem
-												label={__('Carousel Item Size')}
-												hasValue={() =>
-													hasResponsiveValue(splideOptions, 'perPage', tabName) ||
-													hasResponsiveValue(splideOptions, 'fixedWidth', tabName)
-												}
-												onDeselect={() => {
-													const next = setMultipleResponsiveValues(splideOptions, tabName, {
-														perPage: getResponsiveDefaultValue('perPage', tabName),
-														fixedWidth: getResponsiveDefaultValue('fixedWidth', tabName),
-													});
-													setAttributes({ splideOptions: next });
-													setResettingTab(tabName);
-													setTimeout(() => setResettingTab(null), 20); // short delay to ensure it gets picked up
-												}}
+									{splideState.get('type', breakpoint) !== 'fade' && (
+										<ResponsiveMultiControl
+											label={__('Carousel Item Size', 'groundworx-carousel')}
+											attributes={['perPage', 'fixedWidth']}
+											breakpoint={breakpoint}
+											splideState={splideState}
+											ControlComponent={OptionWidthLayoutPanel}
+											options={{
+												perPage: splideState.get('perPage', breakpoint),
+												fixedWidth: splideState.get('fixedWidth', breakpoint),
+											}}
+											defaults={{
+												perPage: isDefault 
+													? DEFAULT_VALUES.perPage.default 
+													: splideState.get('perPage', 'default'),
+												fixedWidth: isDefault
+													? DEFAULT_VALUES.fixedWidth.default
+													: splideState.get('fixedWidth', 'default'),
+											}}
+											isResetting={resettingTab === breakpoint}
+											onChange={({ perPage, fixedWidth }) => {
 												
-												isShownByDefault
-											>
-											
-											<OptionWidthLayoutPanel
-												options={{
-													perPage: getResponsiveValue(splideOptions, 'perPage', tabName),
-													fixedWidth: getResponsiveValue(splideOptions, 'fixedWidth', tabName),
-												}}
-												defaults={{
-													perPage:
-														tabName === 'default'
-															? getResponsiveDefaultValue('perPage', tabName)
-															: splideOptions?.perPage,
-													fixedWidth:
-														tabName === 'default'
-															? getResponsiveDefaultValue('fixedWidth', tabName)
-															: splideOptions?.fixedWidth,
-												}}
-												isResetting={resettingTab === tabName}
-												onChange={({ perPage, fixedWidth }) => {
-													let next = setResponsiveValue(splideOptions, 'perPage', tabName, perPage);
-													next = setResponsiveValue(next, 'fixedWidth', tabName, fixedWidth);
-													setAttributes({ splideOptions: next });
-												}}
-											/>
-
-											</ToolsPanelItem>
-
-											<ToolsPanelItem
-												label={__('Slides Per Move')}
-												hasValue={() => hasResponsiveValue(splideOptions, 'perMove', tabName)}
-												onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'perMove', tabName, getResponsiveDefaultValue('perMove', tabName)) })}
-												isShownByDefault
-											>
-												<ColumnControl
-													label={__('Slides Per Move')}
-													value={getResponsiveValue(splideOptions, 'perMove', tabName)}
-													onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'perMove', tabName, val) })}
-													min={1}
-													max={10}
-												/>
-											</ToolsPanelItem>
-										</>
-									)}
-									{ getResponsiveValue(splideOptions, 'rewind', tabName) !== 'loop' && splideOptions.type !== 'loop' && (
-										<>
-											<ToolsPanelItem
-												label={__('Rewind')}
-												hasValue={() => hasResponsiveValue(splideOptions, 'rewind', tabName)}
-												onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'rewind', tabName, getResponsiveDefaultValue('rewind', tabName)) })}
-												isShownByDefault
-											>
-												<ToggleControl
-													label={__('Rewind')}
-													checked={!!getResponsiveValue(splideOptions, 'rewind', tabName)}
-													onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'rewind', tabName, val) })}
-													help={
-														!isDefault && typeof getResponsiveValue(splideOptions, 'rewind', tabName) === 'undefined'
-															? __('Inherit')
-															: getResponsiveValue(splideOptions, 'rewind', tabName)
-															? __('Enabled')
-															: __('Disabled')
+												if (typeof perPage === 'number' && perPage >= 1) {
+													const rootFixedWidth = splideState.get('fixedWidth', 'default');
+													
+													if (breakpoint !== 'default' && rootFixedWidth) {
+														splideState.setMultiple({ perPage, fixedWidth: 0 }, breakpoint);
+													} else {
+														splideState.setMultiple({ perPage, fixedWidth: undefined }, breakpoint);
 													}
-													className={
-														!isDefault && typeof getResponsiveValue(splideOptions, 'rewind', tabName) === 'undefined'
-															? 'is-inherited'
-															: ''
+												} else if (typeof fixedWidth === 'string' && fixedWidth.length > 0) {
+													const rootPerPage = splideState.get('perPage', 'default');
+													
+													if (breakpoint !== 'default' && rootPerPage) {
+														splideState.setMultiple({ perPage: 0, fixedWidth }, breakpoint);
+													} else {
+														splideState.setMultiple({ perPage: undefined, fixedWidth }, breakpoint);
 													}
-												/>
-											</ToolsPanelItem>
-										</>
+												} else {
+													splideState.setMultiple({ perPage, fixedWidth }, breakpoint);
+												}
+											}}
+											onDeselect={() => {
+												splideState.setMultiple({
+													perPage: splideState.getDefault('perPage', breakpoint),
+													fixedWidth: splideState.getDefault('fixedWidth', breakpoint)
+												}, breakpoint);
+												setResettingTab(breakpoint);
+												setTimeout(() => setResettingTab(null), 20);
+											}}
+										/>
 									)}
-									<ToolsPanelItem
-										label={__('Autoplay')}
-										hasValue={() => hasResponsiveValue(splideOptions, 'autoplay', tabName)}
-										onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'autoplay', tabName, getResponsiveDefaultValue('autoplay', tabName)) })}
-										isShownByDefault
-									>
-										<ToggleControl
-											label={__('Autoplay')}
-											checked={!!getResponsiveValue(splideOptions, 'autoplay', tabName)}
-											onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'autoplay', tabName, val) })}
-											help={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'autoplay', tabName) === 'undefined'
-													? __('Inherit')
-													: getResponsiveValue(splideOptions, 'autoplay', tabName)
-													? __('Enabled')
-													: __('Disabled')
-											}
-											className={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'autoplay', tabName) === 'undefined'
-													? 'is-inherited'
-													: ''
-											}
-										/>
-									</ToolsPanelItem>
 
-									<ToolsPanelItem
-										label={__('Pagination')}
-										hasValue={() => hasResponsiveValue(splideOptions, 'pagination', tabName)}
-										onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'pagination', tabName, getResponsiveDefaultValue('pagination', tabName)) })}
-										isShownByDefault
-									>
-										<ToggleControl
-											label={__('Pagination')}
-											checked={!!getResponsiveValue(splideOptions, 'pagination', tabName)}
-											onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'pagination', tabName, val) })}
-											help={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'pagination', tabName) === 'undefined'
-													? __('Inherit')
-													: getResponsiveValue(splideOptions, 'pagination', tabName)
-													? __('Enabled')
-													: __('Disabled')
-											}
-											className={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'pagination', tabName) === 'undefined'
-													? 'is-inherited'
-													: ''
-											}
+									{splideState.get('type', breakpoint) !== 'fade' && (
+										<ResponsiveRangeControl
+											label={__('Slides Per Move', 'groundworx-carousel')}
+											attribute="perMove"
+											breakpoint={breakpoint}
+											splideState={splideState}
+											ControlComponent={ColumnControl}
+											min={1}
+											max={10}
 										/>
-									</ToolsPanelItem>
+									)}
 
-									<ToolsPanelItem
-										label={__('Arrows')}
-										hasValue={() => hasResponsiveValue(splideOptions, 'arrows', tabName)}
-										onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'arrows', tabName, getResponsiveDefaultValue('arrows', tabName)) })}
-										isShownByDefault
-									>
-										<ToggleControl
-											label={__('Arrows')}
-											checked={!!getResponsiveValue(splideOptions, 'arrows', tabName)}
-											onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'arrows', tabName, val) })}
-											help={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'arrows', tabName) === 'undefined'
-													? __('Inherit')
-													: getResponsiveValue(splideOptions, 'arrows', tabName)
-													? __('Enabled')
-													: __('Disabled')
-											}
-											className={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'arrows', tabName) === 'undefined'
-													? 'is-inherited'
-													: ''
-											}
-										/>
-									</ToolsPanelItem>
+									<ResponsiveToggleControl
+										label={__('Rewind', 'groundworx-carousel')}
+										attribute="rewind"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
 
-									<ToolsPanelItem
-										label={__('Progress Bar')}
-										hasValue={() => hasResponsiveValue(splideOptions, 'progressBar', tabName)}
-										onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'progressBar', tabName, getResponsiveDefaultValue('progressBar', tabName)) })}
-										isShownByDefault
-									>
-										<ToggleControl
-											label={__('Progress Bar')}
-											checked={!!getResponsiveValue(splideOptions, 'progressBar', tabName)}
-											onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'progressBar', tabName, val) })}
-											help={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'progressBar', tabName) === 'undefined'
-													? __('Inherit')
-													: getResponsiveValue(splideOptions, 'progressBar', tabName)
-													? __('Enabled')
-													: __('Disabled')
-											}
-											className={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'progressBar', tabName) === 'undefined'
-													? 'is-inherited'
-													: ''
-											}
-										/>
-									</ToolsPanelItem>
+									<ResponsiveToggleControl
+										label={__('Omit End', 'groundworx-carousel')}
+										attribute="omitEnd"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
 
-									<ToolsPanelItem
-										label={__('Counter')}
-										hasValue={() => hasResponsiveValue(splideOptions, 'counter', tabName)}
-										onDeselect={() => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'counter', tabName, getResponsiveDefaultValue('counter', tabName)) })}
-										isShownByDefault
-									>
-										<ToggleControl
-											label={__('Counter')}
-											checked={!!getResponsiveValue(splideOptions, 'counter', tabName)}
-											onChange={(val) => setAttributes({ splideOptions: setResponsiveValue(splideOptions, 'counter', tabName, val) })}
-											help={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'counter', tabName) === 'undefined'
-													? __('Inherit')
-													: getResponsiveValue(splideOptions, 'counter', tabName)
-													? __('Enabled')
-													: __('Disabled')
-											}
-											className={
-												!isDefault && typeof getResponsiveValue(splideOptions, 'counter', tabName) === 'undefined'
-													? 'is-inherited'
-													: ''
-											}
-										/>
-									</ToolsPanelItem>
+									<ResponsiveToggleControl
+										label={__('Trim Space', 'groundworx-carousel')}
+										attribute="trimSpace"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
+
+									<ResponsiveToggleControl
+										label={__('Autoplay', 'groundworx-carousel')}
+										attribute="autoplay"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
+
+									<ResponsiveToggleControl
+										label={__('Pagination', 'groundworx-carousel')}
+										attribute="pagination"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
+
+									<ResponsiveToggleControl
+										label={__('Arrows', 'groundworx-carousel')}
+										attribute="arrows"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
+
+									<ResponsiveToggleControl
+										label={__('Progress Bar', 'groundworx-carousel')}
+										attribute="progressBar"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
+
+									<ResponsiveToggleControl
+										label={__('Counter', 'groundworx-carousel')}
+										attribute="counter"
+										breakpoint={breakpoint}
+										splideState={splideState}
+									/>
 								</>
-							) : (
+							)}
+
+							{isDestroyed && (
 								<>
 									<ToolsPanelItem
-										label={__('Grid Layout')}
-										hasValue={() =>
-											hasLayoutOverride(breakpoints, tabName, 'columnCount', isFirstDestroy ? 'default' : tabName) ||
-											hasLayoutOverride(breakpoints, tabName, 'minimumColumnWidth', isFirstDestroy ? 'default' : tabName)
-										}
+										label={__('Grid Layout', 'groundworx-carousel')}
+										hasValue={() => {
+											const columnCount = layoutState.getLayout(breakpoint, 'columnCount');
+											const minimumColumnWidth = layoutState.getLayout(breakpoint, 'minimumColumnWidth');
+											
+											if (isFirstDestroy) {
+												return columnCount !== GRID_DEFAULT_VALUES.columnCount.default || 
+												       minimumColumnWidth !== GRID_DEFAULT_VALUES.minimumColumnWidth.default;
+											} else {
+												return columnCount !== undefined || minimumColumnWidth !== undefined;
+											}
+										}}
 										onDeselect={() => {
-											const fallback = isFirstDestroy ? 'default' : tabName;
-											const resetKeys = ['columnCount', 'minimumColumnWidth'];
-											const updated = resetLayoutValues(breakpoints, tabName, resetKeys, fallback);
-											setAttributes({ breakpoints: updated });
+											if (isFirstDestroy) {
+												layoutState.setLayoutMultiple(breakpoint, {
+													type: GRID_DEFAULT_VALUES.type.default,
+													columnCount: GRID_DEFAULT_VALUES.columnCount.default,
+													minimumColumnWidth: GRID_DEFAULT_VALUES.minimumColumnWidth.default
+												});
+											} else {
+												layoutState.setLayoutMultiple(breakpoint, {
+													columnCount: undefined,
+													minimumColumnWidth: undefined
+												});
+											}
 										}}
 										isShownByDefault
 									>
 										<ResponsiveGridLayoutPanel
-											options={breakpoints?.[tabName]?.layout || {}}
+											options={(() => {
+												const opts = layoutState.breakpoints?.[breakpoint]?.layout || {};
+												return opts;
+											})()}
 											onChange={(newLayout) => {
-												setAttributes({
-													breakpoints: {
-														...breakpoints,
-														[tabName]: {
-															...(breakpoints?.[tabName] || {}),
-															layout: newLayout,
-														},
-													},
-												});
+												layoutState.setLayoutMultiple(breakpoint, newLayout);
 											}}
+											defaults={isFirstDestroy ? {
+												columnCount: GRID_DEFAULT_VALUES.columnCount.default,
+												minimumColumnWidth: GRID_DEFAULT_VALUES.minimumColumnWidth.default
+											} : {
+												columnCount: GRID_DEFAULT_VALUES.columnCount.breakpoint,
+												minimumColumnWidth: GRID_DEFAULT_VALUES.minimumColumnWidth.breakpoint
+											}}
+											isFirstDestroy={isFirstDestroy}
 										/>
 									</ToolsPanelItem>
 
 									<ToolsPanelItem
-										label={__('Equal Row Height')}
-										hasValue={() =>
-											hasBreakpointValue(
-												breakpoints,
-												'sameHeight',
-												tabName,
-												undefined,
-												isFirstDestroy ? 'default' : null
-											)
-										}
+										label={__('Equal Row Height', 'groundworx-carousel')}
+										hasValue={() => {
+											const sameHeight = layoutState.breakpoints?.[breakpoint]?.sameHeight;
+											
+											if (isFirstDestroy) {
+												return sameHeight !== GRID_DEFAULT_VALUES.sameHeight.default && sameHeight !== undefined;
+											} else {
+												return sameHeight !== undefined;
+											}
+										}}
 										onDeselect={() => {
-											const value = getResponsiveDefaultValue('sameHeight', isFirstDestroy ? 'default' : tabName);
-											const updated = setBreakpointValue(breakpoints, 'sameHeight', tabName, value);
+											const updated = { ...layoutState.breakpoints };
+											if (updated[breakpoint]) {
+												if (isFirstDestroy) {
+													updated[breakpoint] = {
+														...updated[breakpoint],
+														sameHeight: GRID_DEFAULT_VALUES.sameHeight.default
+													};
+												} else {
+													delete updated[breakpoint].sameHeight;
+													if (Object.keys(updated[breakpoint]).length === 0) {
+														delete updated[breakpoint];
+													}
+												}
+											}
 											setAttributes({ breakpoints: updated });
 										}}
 										isShownByDefault
 									>
 										<ToggleControl
-											label={__('Equal Row Height')}
-											checked={!!getBreakpointValue(breakpoints, 'sameHeight', tabName)}
+											label={__('Equal Row Height', 'groundworx-carousel')}
+											checked={!!layoutState.breakpoints?.[breakpoint]?.sameHeight}
 											onChange={(val) => {
-												const updated = setBreakpointValue(breakpoints, 'sameHeight', tabName, val);
+												const updated = { ...layoutState.breakpoints };
+												const bpData = { ...(updated[breakpoint] || {}) };
+												if (val) {
+													bpData.sameHeight = true;
+												} else {
+													delete bpData.sameHeight;
+												}
+												updated[breakpoint] = bpData;
 												setAttributes({ breakpoints: updated });
 											}}
 											help={
-												tabName !== 'default' && typeof getBreakpointValue(breakpoints, 'sameHeight', tabName) === 'undefined'
-													? __('Inherit')
-													: getBreakpointValue(breakpoints, 'sameHeight', tabName)
-														? __('Enabled')
-														: __('Disabled')
-											}
-											className={
-												tabName !== 'default' && typeof getBreakpointValue(breakpoints, 'sameHeight', tabName) === 'undefined'
-													? 'is-inherited'
-													: ''
+												layoutState.breakpoints?.[breakpoint]?.sameHeight
+													? __('Enabled', 'groundworx-carousel')
+													: __('Disabled', 'groundworx-carousel')
 											}
 										/>
 									</ToolsPanelItem>
-
 								</>
 							)}
 						</ToolsPanel>
-					)
+					);
 				}}
 			</TabPanel>
 		</InspectorControls>
-	
 	);
 }

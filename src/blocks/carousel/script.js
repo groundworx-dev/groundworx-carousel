@@ -1,45 +1,82 @@
 import Splide from '@splidejs/splide';
 import '@splidejs/splide/dist/css/splide-core.min.css';
 
-import { mountCounter, mountProgressBar, mountArrowPath } from './utils/carousel';
-import { PAGINATION_SHAPES } from './utils/carousel-ui';
-
+import { mountCounter, mountProgressBar } from './utils/carousel';
+import { ARROW_STYLES, PAGINATION_STYLES } from './utils/carousel-ui';
 import { getBreakpoints } from '@groundworx/utils';
 
-function resolveBreakpoints(options = {}, mapBreakpoints = null) {
+/**
+ * Resolve named breakpoints to pixel values for frontend
+ */
+function resolveBreakpointsForFrontend(options) {
 	if (!options.breakpoints) return options;
-
-	const resolvedBreakpoints = {};
-
-	for (const key in options.breakpoints) {
-		let breakpointValue = getBreakpoints.resolve(key);
-
-		if (breakpointValue === null) continue;
-
-		if (typeof mapBreakpoints === 'object' && mapBreakpoints[key] !== undefined) {
-			breakpointValue = parseInt(mapBreakpoints[key]);
-		} else if (typeof mapBreakpoints === 'function') {
-			breakpointValue = parseInt(mapBreakpoints(key, breakpointValue));
-		}
-
-		if (!isNaN(breakpointValue)) {
-			resolvedBreakpoints[breakpointValue] = options.breakpoints[key];
+	
+	const resolved = { ...options };
+	const pixelBreakpoints = {};
+	
+	for (const [name, config] of Object.entries(options.breakpoints)) {
+		const pixelValue = getBreakpoints.resolve(name);
+		if (pixelValue !== null) {
+			pixelBreakpoints[pixelValue] = config;
 		}
 	}
+	
+	resolved.breakpoints = pixelBreakpoints;
+	return resolved;
+}
 
-	return {
-		...options,
-		breakpoints: resolvedBreakpoints,
+/**
+ * Get the resolved value for a specific option at the current viewport
+ */
+function getResolvedOption(options, optionName) {
+	const width = window.innerWidth;
+	let value = options[optionName];
+	
+	if (options.breakpoints) {
+		const sortedBreakpoints = Object.keys(options.breakpoints)
+			.map(bp => parseInt(bp))
+			.sort((a, b) => a - b);
+		
+		for (const bp of sortedBreakpoints) {
+			if (width >= bp && options.breakpoints[bp][optionName] !== undefined) {
+				value = options.breakpoints[bp][optionName];
+			}
+		}
+	}
+	
+	return value;
+}
+
+/**
+ * Update feature classes based on current breakpoint
+ */
+function updateFeatureClasses(el, options) {
+	const features = {
+		'arrows': getResolvedOption(options, 'arrows'),
+		'pagination': getResolvedOption(options, 'pagination'),
+		'counter': getResolvedOption(options, 'counter'),
+		'progressBar': getResolvedOption(options, 'progressBar')
 	};
+	
+	Object.keys(features).forEach(feature => {
+		const className = `splide--has-${feature.toLowerCase()}`;
+		if (features[feature] === true) {
+			el.classList.add(className);
+		} else {
+			el.classList.remove(className);
+		}
+	});
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-	const mapBreakpoints = getBreakpoints.all();
-
 	document.querySelectorAll('[data-splide].splide').forEach((el) => {
 		const datasetOptions = el.dataset.splide ? JSON.parse(el.dataset.splide) : {};
-		const options = resolveBreakpoints(datasetOptions, mapBreakpoints);
-
+		
+		// Resolve named breakpoints to pixel values
+		const options = resolveBreakpointsForFrontend(datasetOptions);
+		
+		// Initial feature classes
+		updateFeatureClasses(el, options);
 
 		let splide = new Splide(el, options);
 
@@ -48,16 +85,24 @@ document.addEventListener('DOMContentLoaded', () => {
 				splide.destroy(true);
 			}
 			
-			// Create fresh instance
-			splide = new Splide(el, options);
+			// Get arrow path from data attribute
+			const arrowStyle = el.dataset.arrow || 'chevron';
+			const arrowData = ARROW_STYLES[arrowStyle] || ARROW_STYLES.chevron;
+			
+			// Add arrowPath to options
+			const splideOptionsWithArrow = {
+				...options,
+				arrowPath: arrowData.path
+			};
+			
+			splide = new Splide(el, splideOptionsWithArrow);
 
 			splide.on('overflow', (isOverflow) => {
 				el.classList.toggle('is-overflow', isOverflow);
 				
 				if (!isOverflow) {
-					splide.go( 0 );
+					splide.go(0);
 					splide.options = {
-						focus: undefined,
 						arrows: false,
 						pagination: false,
 						drag: false,
@@ -76,16 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
 						return;
 					}
 
-					item.button.innerHTML = PAGINATION_SHAPES[paginationStyle] || PAGINATION_SHAPES.circle;
+					const style = PAGINATION_STYLES[paginationStyle] || PAGINATION_STYLES.circle;
+					if (style && style.svg) {
+						item.button.innerHTML = style.svg;
+					}
 				});
 			});
 
 			splide.on('mounted', () => {
-				mountArrowPath(splide, el);
 				mountCounter(splide, el);
 				mountProgressBar(splide, el);
+				updateFeatureClasses(el, options);
 			});
-
 
 			splide.mount();
 		};
@@ -98,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		window.addEventListener('resize', () => {
 			clearTimeout(resizeTimeout);
 			resizeTimeout = setTimeout(() => {
+				updateFeatureClasses(el, options);
 				mountSplide();
 			}, 150);
 		});

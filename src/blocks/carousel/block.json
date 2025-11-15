@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "groundworx/carousel",
-	"version": "0.1.0",
+	"version": "2.0.0",
 	"title": "Carousel",
 	"category": "design",
 	"description": "Display content in a carousel, with blocks added to each slide.",
@@ -20,11 +20,7 @@
 		"inserter": true,
 		"className": true,
 		"groundworx": {
-			"breakpoints": ["tablet", "laptop", "desktop"],
-			"carousel": {
-				"arrowStyle": "M14.74,36l-3.48-3.48L23.79,20L11.26,7.48L14.74,4l16,16L14.74,36z",
-				"paginationStyle": "circle"
-			}
+			"breakpoints": ["large-phone", "tablet", "large-tablet", "laptop", "desktop", "large-desktop"]
 		},
         "color": {
 			"gradients": true,
@@ -59,7 +55,7 @@
 		},
 		"layout": {
 			"default": {
-				"type": "constrained"
+				"type": "default"
 			},
 			"allowJustification": true,
 			"allowOrientation": true,
@@ -97,12 +93,51 @@
 		"customProgressColor": {
 			"type": "string"
 		},
+		"progressBackgroundColor": {
+			"type": "string"
+		},
+		"customProgressBackgroundColor": {
+			"type": "string"
+		},
+
 		"paginationColor": {
 			"type": "string"
 		},
 		"customPaginationColor": {
 			"type": "string"
 		},
+		"paginationBackgroundColor": {
+			"type": "string"
+		},
+		"customPaginationBackgroundColor": {
+			"type": "string"
+		},
+		"paginationBorderColor": {
+			"type": "string"
+		},
+		"customPaginationBorderColor": {
+			"type": "string"
+		},
+
+		"paginationInactiveColor": {
+			"type": "string"
+		},
+		"customInactivePaginationColor": {
+			"type": "string"
+		},
+		"paginationInactiveBackgroundColor": {
+			"type": "string"
+		},
+		"customPaginationInactiveBackgroundColor": {
+			"type": "string"
+		},
+		"paginationInactiveBorderColor": {
+			"type": "string"
+		},
+		"customPaginationInactiveBorderColor": {
+			"type": "string"
+		},
+		
 		"arrowsColor": {
 			"type": "string"
 		},
@@ -115,11 +150,26 @@
 		"customArrowsBackgroundColor": {
 			"type": "string"
 		},
+		"arrowsBorderColor": {
+			"type": "string"
+		},
+		"customArrowsBorderColor": {
+			"type": "string"
+		},
+
 		"counterColor": {
 			"type": "string"
 		},
 		"customCounterColor": {
 			"type": "string"
+		},
+		"paginationStyle": {
+			"type": "string",
+			"default": "circleOutline"
+		},
+		"arrowStyle": {
+			"type": "string",
+			"default": "chevron"
 		},
 		"breakpoints": {
 			"type": "object",
@@ -149,7 +199,7 @@
 			"type": "object",
 			"default": {
 				"type": "slide",
-				"focus": 0,
+				"focus": "",
 				"perPage": 1,
 				"rewind": false,
 				"autoplay": false,
@@ -157,7 +207,9 @@
 				"arrows": false,
 				"progressBar": false,
 				"counter": false,
-				"autoHeight": false
+				"autoHeight": false,
+				"mediaQuery": "min",
+				"omitEnd": true
 			}
 		}
 	},

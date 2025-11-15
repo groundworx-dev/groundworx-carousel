@@ -10,7 +10,11 @@ export default function OptionWidthLayoutPanel({ options = {}, onChange, default
 
 	const [manualValue, setManualValue] = useState(perPage);
 	const [autoValue, setAutoValue] = useState(fixedWidth);
-	const [isManual, setIsManual] = useState(() => typeof fixedWidth !== 'string');
+	const [isManual, setIsManual] = useState(() => {
+		if (typeof perPage === 'number') return true;
+		if (typeof fixedWidth === 'string') return false;
+		return true;
+	});
 	const [userToggledMode, setUserToggledMode] = useState(false);
 
 	useEffect(() => {
@@ -56,32 +60,32 @@ export default function OptionWidthLayoutPanel({ options = {}, onChange, default
 		<BaseControl as="fieldset">
 			<VStack spacing={4}>
 				<ToggleGroupControl
-					label={__('Carousel item position')}
+					label={__('Carousel item position', 'groundworx-carousel')}
 					value={isManual ? 'manual' : 'auto'}
 					onChange={handleModeToggle}
 					isBlock
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				>
-					<ToggleGroupControlOption value="auto" label={__('Auto')} />
-					<ToggleGroupControlOption value="manual" label={__('Manual')} />
+					<ToggleGroupControlOption value="auto" label={__('Auto', 'groundworx-carousel')} />
+					<ToggleGroupControlOption value="manual" label={__('Manual', 'groundworx-carousel')} />
 				</ToggleGroupControl>
 
 				{isManual ? (
 					<ColumnControl
-						label={__('Slides to show')}
+						label={__('Slides to show', 'groundworx-carousel')}
 						value={manualValue}
 						onChange={updateManual}
 						min={1}
 						max={10}
-						help={typeof manualValue === 'undefined' ? __('Inherit') : ''}
+						help={typeof manualValue === 'undefined' ? __('Inherit', 'groundworx-carousel') : ''}
 					/>
 				) : (
 					<WidthControl
-						label={__('Minimum slide width')}
+						label={__('Minimum slide width', 'groundworx-carousel')}
 						value={autoValue}
 						onChange={updateAuto}
-						help={typeof autoValue === 'undefined' ? __('Inherit') : ''}
+						help={typeof autoValue === 'undefined' ? __('Inherit', 'groundworx-carousel') : ''}
 					/>
 				)}
 			</VStack>

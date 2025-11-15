@@ -1,22 +1,22 @@
 import { __ } from '@wordpress/i18n';
 import { __experimentalToggleGroupControl as ToggleGroupControl, __experimentalToggleGroupControlOption as ToggleGroupControlOption, __experimentalVStack as VStack } from '@wordpress/components';
 import { useState, useEffect } from '@wordpress/element';
-
 import { WidthControl, ColumnControl } from '@groundworx/components';
 
-export default function ResponsiveGridLayoutPanel({ options = {}, onChange }) {
+export default function ResponsiveGridLayoutPanel({ options = {}, onChange, defaults = {} }) {
 	const { columnCount, minimumColumnWidth } = options;
+	const { columnCount: defaultColumnCount, minimumColumnWidth: defaultMinimumColumnWidth } = defaults;
 
 	const [isManual, setIsManual] = useState(() => {
 		if (typeof columnCount === 'number') return true;
 		if (typeof minimumColumnWidth === 'string') return false;
-		return true; // fallback mode
+		if (typeof defaultColumnCount === 'number') return true;
+		return true;
 	});
 
-	const [manualValue, setManualValue] = useState(columnCount);
-	const [autoValue, setAutoValue] = useState(minimumColumnWidth);
+	const [manualValue, setManualValue] = useState(columnCount ?? defaultColumnCount);
+	const [autoValue, setAutoValue] = useState(minimumColumnWidth ?? defaultMinimumColumnWidth);
 
-	// Sync values when external options change (like reset/inherit)
 	useEffect(() => {
 		if (typeof columnCount === 'number') {
 			setIsManual(true);
@@ -27,11 +27,18 @@ export default function ResponsiveGridLayoutPanel({ options = {}, onChange }) {
 			setAutoValue(minimumColumnWidth);
 			setManualValue(undefined);
 		} else {
-			// Reset/inherit fallback
-			setManualValue(undefined);
-			setAutoValue(undefined);
+			setManualValue(defaultColumnCount);
+			setAutoValue(defaultMinimumColumnWidth);
+			
+			if (defaultColumnCount !== undefined || defaultMinimumColumnWidth !== undefined) {
+				onChange({
+					type: 'grid',
+					columnCount: defaultColumnCount,
+					minimumColumnWidth: defaultMinimumColumnWidth,
+				});
+			}
 		}
-	}, [columnCount, minimumColumnWidth]);
+	}, [columnCount, minimumColumnWidth, defaultColumnCount, defaultMinimumColumnWidth]);
 
 	const updateManual = (val) => {
 		const parsed = parseInt(val, 10);
@@ -66,11 +73,13 @@ export default function ResponsiveGridLayoutPanel({ options = {}, onChange }) {
 				minimumColumnWidth: undefined,
 			});
 		} else {
+			const defaultWidth = autoValue || '300px';
+			setAutoValue(defaultWidth);
 			onChange({
 				...options,
 				type: 'grid',
 				columnCount: undefined,
-				minimumColumnWidth: autoValue,
+				minimumColumnWidth: defaultWidth,
 			});
 		}
 	};
@@ -78,20 +87,20 @@ export default function ResponsiveGridLayoutPanel({ options = {}, onChange }) {
 	return (
 		<VStack spacing={4}>
 			<ToggleGroupControl
-				label={__('Grid item position')}
+				label={__('Grid item position', 'groundworx-carousel')}
 				value={isManual ? 'manual' : 'auto'}
 				onChange={handleModeToggle}
 				isBlock
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 			>
-				<ToggleGroupControlOption value="auto" label={__('Auto')} />
-				<ToggleGroupControlOption value="manual" label={__('Manual')} />
+				<ToggleGroupControlOption value="auto" label={__('Auto', 'groundworx-carousel')} />
+				<ToggleGroupControlOption value="manual" label={__('Manual', 'groundworx-carousel')} />
 			</ToggleGroupControl>
 
 			{isManual ? (
 				<ColumnControl
-					label={__('Columns')}
+					label={__('Columns', 'groundworx-carousel')}
 					min={1}
 					max={10}
 					value={manualValue}
@@ -99,7 +108,7 @@ export default function ResponsiveGridLayoutPanel({ options = {}, onChange }) {
 				/>
 			) : (
 				<WidthControl
-					label={__('Minimum column width')}
+					label={__('Minimum column width', 'groundworx-carousel')}
 					value={autoValue}
 					onChange={updateAuto}
 				/>

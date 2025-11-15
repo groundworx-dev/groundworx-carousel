@@ -1,0 +1,64 @@
+.wp-block-groundworx-carousel.template-partial-overlay {
+    > .splide.is-active {
+        > .splide__wrapper {
+            display: grid;
+            grid-template-columns: [track-start progress-start pagination-start counter-start] 1fr [counter-end pagination-end progress-end track-end];
+            grid-template-rows: 
+            [counter-start track-start pagination-start arrow-prev-start arrow-next-start] auto
+            [arrow-prev-end arrow-next-end pagination-end track-end progress-start counter-end] auto
+            [progress-end];
+        
+            > .splide__track {
+                z-index: 0;
+            }
+
+            > .splide__arrows {
+                z-index: 1;
+                display: contents;
+
+                .splide__arrow--prev {
+                    width: min-content;
+                    align-self: center;
+                    justify-self: flex-start;
+                    z-index: 1;
+                }
+
+                .splide__arrow--next {
+                    width: min-content;
+                    align-self: center;
+                    justify-self: flex-end;
+                    z-index: 1;
+                }
+
+                .splide__counter {
+                    align-self: flex-start;
+                    justify-self: flex-end;
+                    z-index: 1;
+                    position: relative;
+                    padding: var(--wp--preset--spacing--gutter, 1rem);
+                }
+            }
+            .splide__pagination {
+                align-self: flex-end;
+                justify-content: center;
+                z-index: 1;
+                position: relative;
+                display: flex;
+                margin: 0;
+                padding: var(--wp--preset--spacing--gutter, 1rem);
+            }
+
+            > .splide__progress {
+                z-index: 1;
+                position: relative;
+            }
+        
+        }
+        &.splide--has-arrows {
+            > .splide__wrapper {
+                grid-template-columns: [arrow-prev-start] calc(2em / 2) [arrow-prev-end track-start progress-start pagination-start counter-start] 1fr [counter-end pagination-end progress-end track-end arrow-next-start] calc(2em / 2) [arrow-next-end];
+            }
+        }
+    }
+        
+}

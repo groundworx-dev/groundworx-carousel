@@ -21,11 +21,27 @@ class Groundworx_Carousel_Block {
 	public static function get_color_css_vars( $attributes ) {
 		$css = '';
 
-		$css .= self::get_css_var_color( $attributes['paginationColor'] ?? '', 			$attributes['customPaginationColor'] ?? '', 		'grx--color--pagination' );
-		$css .= self::get_css_var_color( $attributes['arrowsColor'] ?? '',     			$attributes['customArrowsColor'] ?? '',     		'grx--color--arrows' );
-		$css .= self::get_css_var_color( $attributes['arrowsBackgroundColor'] ?? '', 	$attributes['customArrowsBackgroundColor'] ?? '',   'grx--color--arrows-bg' );
-		$css .= self::get_css_var_color( $attributes['progressColor'] ?? '',   			$attributes['customProgressColor'] ?? '',   		'grx--color--progress' );
-		$css .= self::get_css_var_color( $attributes['counterColor'] ?? '',    			$attributes['customCounterColor'] ?? '',    		'grx--color--counter' );
+		// Active pagination
+		$css .= self::get_css_var_color( $attributes['paginationColor'] ?? '', $attributes['customPaginationColor'] ?? '', 'gwx--color--pagination' );
+		$css .= self::get_css_var_color( $attributes['paginationBackgroundColor'] ?? '', $attributes['customPaginationBackgroundColor'] ?? '', 'gwx--background-color--pagination' );
+		$css .= self::get_css_var_color( $attributes['paginationBorderColor'] ?? '', $attributes['customPaginationBorderColor'] ?? '', 'gwx--border-color--pagination' );
+
+		// Inactive pagination
+		$css .= self::get_css_var_color( $attributes['paginationInactiveColor'] ?? '', $attributes['customPaginationInactiveColor'] ?? '', 'gwx--color--inactive-pagination' );
+		$css .= self::get_css_var_color( $attributes['paginationInactiveBackgroundColor'] ?? '', $attributes['customPaginationInactiveBackgroundColor'] ?? '', 'gwx--background-color--inactive-pagination' );
+		$css .= self::get_css_var_color( $attributes['paginationInactiveBorderColor'] ?? '', $attributes['customPaginationInactiveBorderColor'] ?? '', 'gwx--border-color--inactive-pagination' );
+
+		// Arrows
+		$css .= self::get_css_var_color( $attributes['arrowsColor'] ?? '', $attributes['customArrowsColor'] ?? '', 'gwx--color--arrows' );
+		$css .= self::get_css_var_color( $attributes['arrowsBackgroundColor'] ?? '', $attributes['customArrowsBackgroundColor'] ?? '', 'gwx--background-color--arrows' );
+		$css .= self::get_css_var_color( $attributes['arrowsBorderColor'] ?? '', $attributes['customArrowsBorderColor'] ?? '', 'gwx--border-color--arrows' );
+
+		// Progress bar
+		$css .= self::get_css_var_color( $attributes['progressColor'] ?? '', $attributes['customProgressColor'] ?? '', 'gwx--color--progress' );
+		$css .= self::get_css_var_color( $attributes['progressBackgroundColor'] ?? '', $attributes['customProgressBackgroundColor'] ?? '', 'gwx--background-color--progress' );
+
+		// Counter
+		$css .= self::get_css_var_color( $attributes['counterColor'] ?? '', $attributes['customCounterColor'] ?? '', 'gwx--color--counter' );
 
 		return $css;
 	}

@@ -11,7 +11,6 @@ import { registerBlockType } from '@wordpress/blocks';
 import Edit from './edit';
 import save from './save';
 import metadata from './block.json';
-import variations from './variations';
 import example from './example';
 
 import { Icon } from '@wordpress/icons';
@@ -25,7 +24,7 @@ const carousel = (
 		</g>
 	</svg>
 );
-	
+
 import './style.scss';
 
 /**
@@ -45,6 +44,5 @@ registerBlockType( metadata.name, {
 	 * @see ./save.js
 	 */
 	save,
-	variations,
 	example
 } );

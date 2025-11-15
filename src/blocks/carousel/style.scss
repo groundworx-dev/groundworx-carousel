@@ -2,135 +2,145 @@
     container-type: inline-size;
     > .splide.is-active {
         display: block;
-        > .splide__track {
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-
         > .splide__wrapper {
-            
-            :where(.splide__arrows) {
-                pointer-events: none;
-                grid-area: arrows;
-            }
-
-            :where(.splide__arrow) {
-                display: inline-flex;
-                appearance: none;
-                backface-visibility: hidden;
-                background-color: var(--grx--color--arrows-bg, transparent);
-                color: var(--grx--color--arrows, currentColor);
-                border: 0;
-                padding: .5rem;
-                margin: 0;
-                cursor: pointer;
-                font-size: 1.5em;
-                line-height: 1;
-                pointer-events: auto;
-                &:hover {
-                    background-color: color-mix(in srgb, var(--grx--color--arrows-bg) 75%, #ffffff);
-                    color: color-mix(in srgb, var(--grx--color--arrows) 75%, #ffffff);
-                }
-                &:hover:focus {
-                    background-color: color-mix(in srgb, var(--grx--color--arrows-bg) 75%, #000000);
-                    color: color-mix(in srgb, var(--grx--color--arrows) 75%, #ffffff);
-                }
-                &.splide__arrow--prev svg {
-                    transform: scaleX(-1);
-                }
-                &[disabled] {
-                    opacity: .5;
-                    cursor: default;
-                }
-                > svg {
-                    pointer-events: none;
-                    width: 1em;
-                    height: 1em;
-                    fill: currentColor;
-                }
-            }
-            
-            :where(.splide__arrow--prev) {
-                grid-area: arrow-prev;
-            }
-
-            :where(.splide__arrow--next) {
-                grid-area: arrow-next;
-            }
-
-            :where(.splide__counter) {
-                pointer-events: auto;
-                grid-area: counter;
-                color: var(--grx--color--counter, currentColor);
-            }
-
-            :where(.splide__counter-current) {
-                font-weight: bold;
-            }
-
-            :where(.splide__counter-current, .splide__counter-separator, .splide__counter-total) {
-                display: inline;
-            }
-            
-            :where(.splide__pagination) {
-                grid-area: pagination;
-            }
-
-            :where(.splide__track) {
+            > .splide__track {
+                margin-top: 0;
+                margin-bottom: 0;
                 grid-area: track;
                 min-height: 120px;
             }
-
-            :where(.splide__pagination__page) {
-                display: flex;
-                appearance: none;
-                background-color: transparent;
-                color: var(--grx--color--pagination, currentColor);
-                border: 0;
-                padding: 2px;
-                margin: 0;
-                cursor: pointer;
-                font-size: .875em;
-                &:hover {
-                    color: color-mix(in srgb, var(--grx--color--pagination) 75%, #ffffff);
-                }
-                &:hover:focus {
-                    color: color-mix(in srgb, var(--grx--color--pagination) 75%, #000000);
-                }
-                > svg {
-                    pointer-events: none;
-                    stroke: currentColor;
-                    stroke-width: 1.25px;
-                    fill: none;
-                    width: 1em;
-                    height: 1em;
-                }
-                &.is-active {
-                    cursor: default;
+            > .splide__arrows {
+                pointer-events: none;
+                grid-area: arrows;
+            
+                .splide__arrow {
+                    display: inline-flex;
+                    appearance: none;
+                    backface-visibility: hidden;
+                    border: .1em solid transparent;
+                    background-color: var(--gwx--background-color--arrows, transparent);
+                    color: var(--gwx--color--arrows, currentColor);
+                    border-color: var(--gwx--border-color--arrows, transparent);
+                    padding: .5em;
+                    margin: 0;
+                    cursor: pointer;
+                    font-size: 1em;
+                    line-height: 1;
+                    pointer-events: auto;
+                    border-radius: 2em;
+                    &.splide__arrow--prev svg {
+                        transform: scaleX(-1);
+                    }
+                    &[disabled] {
+                        opacity: .5;
+                        cursor: default;
+                    }
                     > svg {
-                        stroke: currentColor;
-                        stroke-width: 1.25px;
+                        pointer-events: none;
+                        width: 1em;
+                        height: 1em;
                         fill: currentColor;
+                    }
+                }
+                
+                .splide__arrow--prev {
+                    grid-area: arrow-prev;
+                }
+
+                .splide__arrow--next {
+                    grid-area: arrow-next;
+                }
+
+                .splide__counter {
+                    pointer-events: auto;
+                    grid-area: counter;
+                    color: var(--gwx--color--counter, currentColor);
+                }
+
+                .splide__counter-current {
+                    font-weight: bold;
+                }
+
+                .splide__counter-current, .splide__counter-separator, .splide__counter-total {
+                    display: inline;
+                }
+            }
+            > .splide__pagination {
+                grid-area: pagination;
+                gap: .25em;
+
+                .splide__pagination__page {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    appearance: none;
+                    border: .1em solid transparent;
+                    background-color: var(--gwx--background-color--inactive-pagination, transparent);
+                    color: var(--gwx--color--inactive-pagination, currentColor);
+                    border-color: var(--gwx--border-color--inactive-pagination, transparent);
+                    margin: 0;
+                    padding: 0;
+                    min-width: unset;
+                    height: unset;
+                    cursor: pointer;
+                    font-size: .875em;
+                    > svg {
+                        pointer-events: none;
+                        stroke-width: 1;
+                        width: auto;
+                        height: 1em;
+                    }
+                    &.is-active {
+                        cursor: default;
+                        background-color: var(--gwx--background-color--pagination, transparent);
+                        color: var(--gwx--color--pagination, #007cba);
+                        border-color: var(--gwx--border-color--pagination, transparent);
+
+                        > svg {
+                            fill: currentColor;
+                            opacity: 1;
+                        }
                     }
                 }
             }
 
-            :where(.splide__progress) {
+            > .splide__progress {
                 grid-area: progress;
                 width: 100%;
-                height: 4px;
+                height: 5px;
                 overflow: hidden;
-                background-color: color-mix(in srgb, currentColor 25%, transparent);
+                background-color: var(--gwx--background-color--progress, color-mix(in srgb, currentColor 25%, transparent));
                 .splide__progress-bar {
                     width: 0;
                     height: 100%;
-                    background-color: var(--grx--color--progress, var(--wp--preset--color--accent-1, rgb(97, 235, 47)));
+                    background-color: var(--gwx--color--progress, #007cba);
                     transition: width 400ms ease;
                 }
             }            
         }
-
+        
     }
+    &.is-pagination-number {
+        > .splide.is-active > .splide__wrapper > .splide__pagination {
+            .splide__pagination__page {
+                min-width: 2em;
+                height: 2em;
+                border-radius: .25em;
+                border-width: .1em;
+                text-align: center;
+                background-color: var(--gwx--background-color--inactive-pagination, color-mix(in srgb, #000000 75%, transparent));
+                color: var(--gwx--color--inactive-pagination, #ffffff);
+                border-color: var(--gwx--border-color--inactive-pagination, color-mix(in srgb, #000000 75%, transparent));
+                &.is-active {
+                    font-weight: bold;
+                    background-color: var(--gwx--background-color--pagination, #007cba);
+                    color: var(--gwx--color--pagination, #ffffff);
+                    border-color: var(--gwx--border-color--pagination, #007cba);
+                }
+            }
+        }
+    }
+   
 
     > .splide.is-active:not(.is-overflow) {
         > .splide__track {
@@ -159,8 +169,4 @@
     }
 }
 
-@import './variations/default/style';
-@import './variations/compact/style';
-@import './variations/mobile-only/style';
-@import './variations/overlay/style';
-@import './variations/overlay-alt/style';
+@import './templates/styles';

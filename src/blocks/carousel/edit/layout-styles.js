@@ -1,8 +1,4 @@
-/**
- * WordPress dependencies
- */
 import { __experimentalGetGapCSSValue as getGapCSSValue } from '@wordpress/block-editor';
-
 import { getBreakpoints } from '@groundworx/utils';
 
 export default function LayoutStyles({ attributes, clientId }) {

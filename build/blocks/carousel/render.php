@@ -1,22 +1,30 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-$template     			= $attributes['template'] ?? "default";
+
+$template         = $attributes['template'] ?? "default";
+$arrow_style      = $attributes['arrowStyle'] ?? 'chevron';
+$pagination_style = $attributes['paginationStyle'] ?? 'circle';
 
 $style = Groundworx_Carousel_Block::get_color_css_vars( $attributes );
 
+$classes = array(
+	"template-{$template}"
+);
+
+if ( $pagination_style === 'number' ) {
+	$classes[] = 'is-pagination-number';
+}
+
 $wrapper_attributes = get_block_wrapper_attributes([
-	'class' => "template-{$template}",
+	'class' => implode( ' ', $classes ),
 	'style' => $style
 ]);
 
 $unique_id = wp_unique_id( 'splide-' );
 $options = $attributes['splideOptions'] ?? [];
 
-$block_type     = WP_Block_Type_Registry::get_instance()->get_registered( $block->name );
+$block_type       = WP_Block_Type_Registry::get_instance()->get_registered( $block->name );
 $carousel_support = $block_type->supports['groundworx']['carousel'] ?? [];
-
-$arrow_style = $carousel_support['arrowStyle'] ?? '';
-$pagination_style = $attributes['paginationStyle'] ?? $carousel_support['paginationStyle'] ?? 'circle';
 
 $data_attrs = [
 	'id'              => $unique_id,
@@ -45,4 +53,5 @@ $data_attrs = [
 			</div>
 		</div>
 	</div>
+	
 </section>
